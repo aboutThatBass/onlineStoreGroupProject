@@ -1,0 +1,8 @@
+<svg xmlns="http://www.w3.org/2000/svg" width="640" height="480" viewBox="0 0 640 480" role="img" aria-labelledby="title">
+  <title id="title">Example product placeholder</title>
+  <rect width="640" height="480" fill="#e9ecef"/>
+  <rect x="160" y="105" width="320" height="270" rx="28" fill="#ced4da"/>
+  <circle cx="320" cy="190" r="55" fill="#adb5bd"/>
+  <path d="M220 330l70-75 50 48 45-35 55 62z" fill="#adb5bd"/>
+</svg>
+
