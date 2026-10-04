@@ -1,0 +1,14 @@
+# Maven build output
+/target/
+
+# Operating system files
+.DS_Store
+Thumbs.db
+
+# Local secrets
+.env
+.env.*
+!.env.example
+
+# Local AI handoff notes
+PROJECT_CONTEXT.md
