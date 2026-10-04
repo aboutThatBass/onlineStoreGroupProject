@@ -20,15 +20,15 @@
     <h1>Welcome to Viral Vault</h1>
     <p class="lead" th:text="${welcomeMessage}">Welcome message</p>
 
-    <!-- Static example card; replace with products loaded from the agreed database later. -->
+    <!-- Product cards loaded from the backend. -->
     <div class="row mt-4">
-        <div class="col-sm-6 col-md-4 col-lg-3">
+        <div class="col-sm-6 col-md-4 col-lg-3" th:each="product : ${products}">
             <article class="card h-100">
-                <img src="/images/product-placeholder.svg" class="card-img-top" alt="Example product image">
+                <img th:src="${product.imageUrl}" class="card-img-top" th:alt="${product.name}">
                 <div class="card-body">
-                    <h2 class="h5 card-title">Example product</h2>
-                    <p class="card-text mb-1">$19.99</p>
-                    <p class="card-text text-muted">Available: 12</p>
+                    <h2 class="h5 card-title" th:text="${product.name}">Product name</h2>
+                    <p class="card-text mb-1" th:text="'$' + ${#numbers.formatDecimal(product.price, 1, 2)}">$0.00</p>
+                    <p class="card-text text-muted" th:text="'Available: ' + ${product.quantity}">Available: 0</p>
                 </div>
             </article>
         </div>
