@@ -21,9 +21,9 @@ The project targets Java 17. JDK 21 can build this target; teammates do not need
 ## Run locally
 
 1. Install JDK 17 or newer and ensure Java is available. JDK 21 is suitable.
-2. Open the repository folder containing `pom.xml` in VS Code. The VS Code Java Extension Pack is useful.
-3. Check Java: `java -version`.
-4. In the VS Code terminal, start the application using the Maven Wrapper:
+2. Open the repository folder in your IDE (for example IntelliJ IDEA or VS Code with the Extension Pack for Java).
+3. Open a terminal in your IDE and check Java: `java -version`.
+4. In the IDE's terminal, start the application using the Maven Wrapper:
 
    Windows PowerShell:
    ```powershell
@@ -43,8 +43,14 @@ If Maven reports a Java configuration error, ensure `JAVA_HOME` points to the in
 
 ## Build and check
 
+Windows PowerShell:
 ```powershell
 .\mvnw.cmd verify
+```
+
+macOS/Linux:
+```sh
+./mvnw verify
 ```
 
 This builds the project and runs any tests present. There are no automated tests in the starter yet; a successful build does not prove shopping functionality exists.
