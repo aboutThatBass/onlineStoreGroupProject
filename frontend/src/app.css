@@ -1,0 +1,32 @@
+
+:root {
+    /* Viral Vault retro color palette */
+    --color-background: #ffedad;
+    --color-surface: #ffffff;
+    --color-text: #40342e;
+    --color-border: #40342e;
+    --color-accent: #e8a598;
+    --color-accent-hover: #d88f83;
+    --color-disabled: #d4d0ca;
+
+    /* Shared design properties */
+    --border-radius: 12px;
+    --card-shadow: 4px 4px 0 var(--color-border);
+
+    font-family: Arial, sans-serif;
+    color: var(--color-text);
+    background-color: var(--color-background);
+}
+
+* {
+    box-sizing: border-box;
+}
+
+body {
+    margin: 0;
+    min-height: 100vh;
+}
+
+button, input, select {
+    font: inherit;
+}
