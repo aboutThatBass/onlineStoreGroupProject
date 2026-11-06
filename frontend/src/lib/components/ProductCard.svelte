@@ -2,7 +2,15 @@
 <script lang="ts">
     import type { Product } from '../types/Product';
 
+    // NEW: Import the shopping cart store
+    import { cart } from '../stores/cart';
+
     let { product }: { product: Product } = $props();
+
+    // NEW: Add the selected product to the cart
+    function addToCart() {
+        cart.addItem(product);
+    }
 </script>
 
 <article class="product-card">
@@ -18,7 +26,7 @@
         <p>Out of Stock</p>
     {/if}
 
-    <button disabled={product.quantity === 0}>
+    <button disabled={product.quantity === 0} onclick={addToCart}>
         Add to Cart
     </button>
 </article>
