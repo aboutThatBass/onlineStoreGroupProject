@@ -16,6 +16,7 @@
         try {
             const response = await fetch('http://localhost:8080/api/users/login', {
                 method: 'POST',
+                credentials: 'include',
                 headers: {
                     'Content-Type': 'application/json'
                 },
@@ -27,12 +28,12 @@
 
             const data = await response.json();
 
-            if (response.ok && data.success) {
-                successMessage = 'Login credentials verified successfully!';
-                password = '';
-            } else {
-                errorMessage = data.message ?? 'Invalid email or password.';
-            }
+        if (response.ok && data.success) {
+            password = '';
+            window.location.href = '/';
+        } else {
+            errorMessage = data.message ?? 'Invalid email or password.';
+        }
         } catch (error) {
             errorMessage = 'Unable to connect to the server. Please try again later.';
         } finally {

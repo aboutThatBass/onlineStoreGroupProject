@@ -1,10 +1,31 @@
 
 <script lang="ts">
+    import { onMount } from 'svelte';
     import ProductCard from '../../lib/components/ProductCard.svelte';
-    import { products } from '../../lib/data/products';
+    import type { Product } from '../../lib/types/Product';
 
+    let products: Product[] = $state([]);
     let searchQuery = $state('');
     let sortOption = $state('default');
+    let loading = $state(true);
+    let loadError = $state('');
+
+    onMount(async () => {
+        try {
+            const response = await fetch('http://localhost:8080/api/products');
+
+            if (!response.ok) {
+                throw new Error('Failed to load products');
+            }
+
+            products = await response.json();
+        } catch (error) {
+            console.error('Error loading products:', error);
+            loadError = 'Unable to load products. Please try again later.';
+        } finally {
+            loading = false;
+        }
+    });
 
     let filteredProducts = $derived.by(() => {
         const query = searchQuery.trim().toLowerCase();
@@ -12,7 +33,7 @@
         const results = products.filter((product) => {
             return (
                 product.name.toLowerCase().includes(query) ||
-                product.description.toLowerCase().includes(query)
+                (product.description ?? '').toLowerCase().includes(query)
             );
         });
 
@@ -71,7 +92,11 @@
         Showing {filteredProducts.length} of {products.length} products
     </p>
 
-    {#if filteredProducts.length > 0}
+    {#if loading}
+        <p>Loading products...</p>
+    {:else if loadError}
+        <p>{loadError}</p>
+    {:else if filteredProducts.length > 0}
         <section class="product-grid">
             {#each filteredProducts as product (product.id)}
                 <ProductCard {product} />
