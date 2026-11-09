@@ -1,5 +1,6 @@
 <script lang="ts">
     import{ ShoppingCart, Menu } from '@lucide/svelte';
+    import { cart } from '../stores/cart.svelte';
     let menuOpen = $state(false);
 </script>
 
@@ -26,6 +27,10 @@
 
     <a href="/cart" class="cart-link" aria-label="Shopping cart">
         <ShoppingCart size={28} strokeWidth={2} />
+
+        {#if cart.hasItems}
+            <span class="cart-dot"></span>
+        {/if}
     </a>
 </header>
 
@@ -104,5 +109,25 @@
 
     .menu-container {
         position: relative;
+    }
+
+    
+    .cart-link {
+        position: relative;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+    }
+
+    .cart-dot {
+        position: absolute;
+        bottom: .5px;
+        left: 0.5px;
+        width: 12px;
+        height: 12px;
+        background-color: #dc2626;
+        border: 2px solid black;
+        border-radius: 50%;
+        box-sizing: content-box;
     }
 </style>

@@ -2,10 +2,25 @@
     import { page } from '$app/state';
     import { products } from '../../../lib/data/products';
     import '../../../lib/styles/products.css';
+    import { cart } from '../../../lib/stores/cart.svelte'
 
     let product = $derived(
         products.find(p => p.id === Number(page.params.id))
     );
+
+    let adding = $state(false);
+
+    async function handleAddToCart() {
+        if (!product || adding) return;
+        
+        adding = true;
+
+        try {
+            await cart.add(product.id);
+        } finally {
+            adding = false;
+        }
+    }
 </script>
 
 {#if product}
@@ -27,8 +42,11 @@
                     <p>Out of Stock</p>
                 {/if}
             </div>
-            <button disabled={product.quantity === 0}>
-                Add to Cart
+            <button 
+                onclick={handleAddToCart}
+                disabled={product.quantity === 0}
+            >
+                {adding ? 'Adding...' : 'Add to Cart'}
             </button>
         </div>
     </main>
