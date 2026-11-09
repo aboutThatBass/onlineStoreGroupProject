@@ -10,7 +10,8 @@ CREATE TABLE users (
     user_id INTEGER PRIMARY KEY AUTOINCREMENT,
     username VARCHAR(50) NOT NULL UNIQUE,
     full_name VARCHAR(100),  -- Added for prototype
-    email VARCHAR(100) NOT NULL UNIQUE,
+    email VARCHAR(255) NOT NULL UNIQUE,
+	phone_number VARCHAR(30),
     password_hash VARCHAR(255) NOT NULL,
     birthday DATE,           -- Added for prototype
     address VARCHAR(255),    -- Added for prototype
@@ -71,6 +72,16 @@ VALUES ('admin_user', 'admin@viralvault.com', 'hashedpassword123', 1),
        ('test_shopper', 'shopper@email.com', 'hashedpassword456', 0);
 
 INSERT INTO products (name, category, description, price, quantity, image_url, is_on_sale)
-VALUES ('Labubu', 'Blind boxes', 'Trending blind box figures', 15.99, 50, '/images/labubu.jpg', 0),
-       ('Stanley 40oz', 'Lifestyle', ' Insulated Tumbler', 45.00, 120, '/images/stanley.jpg', 1),
-       ('Needoh', 'Fidgets/Squishies', 'Squishy Stress ball', 13.99, 50, '/images/needoh.jpg', 1);
+VALUES 	('Labubu', 'Blind boxes', 'Trending blind box figures', 15.99, 50, '/images/labubu.jpg', 0),
+		('Stanley 40oz', 'Lifestyle', ' Insulated Tumbler', 45.00, 120, '/images/stanley.jpg', 1),
+		('Needoh', 'Fidgets/Squishies', 'Squishy Stress ball', 13.99, 50, '/images/needoh.jpg', 1),
+		('Sonny Angel Hippers', 'Blind boxes', 'Miniature angel figures that attach to phones and monitors', 12.50, 85, '/images/sonnyangel.jpg', 0),
+		('Crybaby Plush Pendant', 'Blind boxes', 'Viral emotional support bag charm', 22.99, 15, '/images/crybaby.jpg', 0),
+		('Smiski Glow-in-the-Dark', 'Blind boxes', 'Quirky desk figures that glow in the dark', 10.99, 40, '/images/smiski.jpg', 1),
+		('Dumpling Bao Squishy', 'Fidgets/Squishies', 'Viral doughy sensory stress ball', 9.99, 150, '/images/baosquishy.jpg', 1),
+		('Kawaii Slime Kit', 'Fidgets/Squishies', 'Pastel scented slime with animal mix-ins', 16.00, 60, '/images/kawaiislime.jpg', 0),
+		('Grogu Plush Bag Charm', 'Lifestyle', 'Star Wars mystery plush keychain', 14.99, 110, '/images/grogu_charm.jpg', 0);
+	   
+-- indexes for search and sort
+CREATE INDEX idx_products_price ON products(price);
+CREATE INDEX idx_products_name ON products(name);
