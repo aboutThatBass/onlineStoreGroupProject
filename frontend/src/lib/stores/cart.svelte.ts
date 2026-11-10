@@ -37,7 +37,7 @@ class CartStore {
     }
 
     async add(productId: number) {
-        await this.execute(() => addToCart(productId));
+        return this.execute(() => addToCart(productId));
     }
 
     async update(productId: number, quantity: number) {
@@ -62,8 +62,10 @@ class CartStore {
 
         try {
             this.items = await operation();
+            return true;
         } catch (error) {
             this.handleError(error);
+            return false;
         } finally {
             this.loading = false;
         }

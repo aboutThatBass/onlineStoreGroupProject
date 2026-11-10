@@ -20,9 +20,8 @@
 </script>
 
 <article class="product-card">
-    <img src={product.imageUrl} alt={product.name} />
-
     <a href={`/product/${product.id}`} class="product-link">
+        <img src={product.imageUrl} alt="" />
         <h2>{product.name}</h2>
     </a>
     <p>{product.description}</p>
@@ -47,6 +46,12 @@
 </article>
 
 <style>
+    .product-link {
+        display: flex;
+        flex-direction: column;
+        gap: 0.75rem;
+    }
+
     .product-card:hover:not(:has(button:hover)){
         background-color: #f3cc58;
     }
