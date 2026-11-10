@@ -57,3 +57,45 @@ CREATE TABLE IF NOT EXISTS cart_items (
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
+
+INSERT INTO products
+(product_id, name, category, description, price, quantity, image_url)
+SELECT
+    4,
+    'Labubu Exciting Macaron',
+    'Collectibles',
+    'Collectible plush figure from POP MART.',
+    24.99,
+    12,
+    '/images/labubu.png'
+WHERE NOT EXISTS (
+    SELECT 1 FROM products WHERE product_id = 4
+);
+
+INSERT INTO products
+(product_id, name, category, description, price, quantity, image_url)
+SELECT
+    5,
+    'SMISKI Series 1',
+    'Collectibles',
+    'Glow-in-the-dark collectible figure.',
+    12.99,
+    8,
+    '/images/smiski.png'
+WHERE NOT EXISTS (
+    SELECT 1 FROM products WHERE product_id = 5
+);
+
+INSERT INTO products
+(product_id, name, category, description, price, quantity, image_url)
+SELECT
+    6,
+    'Sonny Angel Animal Series',
+    'Collectibles',
+    'Adorable miniature collectible figure.',
+    14.99,
+    0,
+    '/images/sonny-angel.png'
+WHERE NOT EXISTS (
+    SELECT 1 FROM products WHERE product_id = 6
+);

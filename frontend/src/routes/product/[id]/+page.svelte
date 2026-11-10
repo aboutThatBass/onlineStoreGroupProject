@@ -1,18 +1,55 @@
+
 <script lang="ts">
+    import { onMount } from 'svelte';
     import { page } from '$app/state';
-    import { products } from '../../../lib/data/products';
+    import type { Product } from '../../../lib/types/Product';
     import '../../../lib/styles/products.css';
-    import { cart } from '../../../lib/stores/cart.svelte'
+    import { cart } from '../../../lib/stores/cart.svelte';
 
-    let product = $derived(
-        products.find(p => p.id === Number(page.params.id))
-    );
-
+    let product = $state<Product | null>(null);
+    let loading = $state(true);
+    let error = $state('');
     let adding = $state(false);
+
+    async function loadProduct(id: string) {
+        loading = true;
+        error = '';
+        product = null;
+
+        try {
+            const response = await fetch(
+                `http://localhost:8080/api/products/${id}`
+            );
+
+            if (response.status === 404) {
+                error = 'Product not found';
+                return;
+            }
+
+            if (!response.ok) {
+                throw new Error('Unable to load product');
+            }
+
+            product = await response.json();
+        } catch {
+            error = 'Unable to load product';
+        } finally {
+            loading = false;
+        }
+    }
+
+    onMount(() => {
+        if (page.params.id) {
+            loadProduct(page.params.id);
+        } else {
+            loading = false;
+            error = 'Product not found';
+        }
+    });
 
     async function handleAddToCart() {
         if (!product || adding) return;
-        
+
         adding = true;
 
         try {
@@ -23,7 +60,9 @@
     }
 </script>
 
-{#if product}
+{#if loading}
+    <p>Loading product...</p>
+{:else if product}
     <main class="product-detail product-card">
         <div class="product-image">
             <img src={product.imageUrl} alt={product.name} />
@@ -33,7 +72,7 @@
             <h1>{product.name}</h1>
             <p class="description">{product.description}</p>
 
-            <div class='purchase-info'>
+            <div class="purchase-info">
                 <p class="price">${product.price.toFixed(2)}</p>
 
                 {#if product.quantity > 0}
@@ -42,16 +81,21 @@
                     <p>Out of Stock</p>
                 {/if}
             </div>
-            <button 
+
+            <button
                 onclick={handleAddToCart}
-                disabled={product.quantity === 0}
+                disabled={product.quantity === 0 || adding}
             >
                 {adding ? 'Adding...' : 'Add to Cart'}
             </button>
+
+            {#if cart.error}
+                <p class="error" role="alert">{cart.error}</p>
+            {/if}
         </div>
     </main>
 {:else}
-    <h1>Product not found</h1>
+    <h1>{error || 'Product not found'}</h1>
 {/if}
 
 <style>
@@ -78,11 +122,11 @@
         gap: 0;
     }
 
-    .product-info h1{
+    .product-info h1 {
         font-size: 40px;
     }
 
-    .product-info .description{
+    .product-info .description {
         margin-top: 1rem;
         font-size: larger;
     }
@@ -100,11 +144,15 @@
         margin-top: .2rem;
     }
 
-    @media (max-width: 768px) {
-    :global(.product-card).product-detail {
-        grid-template-columns: 1fr;
-        margin: 1rem;
-        padding: 1.25rem;
+    .error {
+        color: #dc2626;
     }
-}
+
+    @media (max-width: 768px) {
+        :global(.product-card).product-detail {
+            grid-template-columns: 1fr;
+            margin: 1rem;
+            padding: 1.25rem;
+        }
+    }
 </style>

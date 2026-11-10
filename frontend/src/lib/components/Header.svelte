@@ -1,7 +1,51 @@
+
 <script lang="ts">
-    import{ ShoppingCart, Menu } from '@lucide/svelte';
+    import { onMount } from 'svelte';
+    import { goto } from '$app/navigation';
+    import { ShoppingCart, Menu } from '@lucide/svelte';
     import { cart } from '../stores/cart.svelte';
+
     let menuOpen = $state(false);
+    let loggedIn = $state(false);
+
+    onMount(async () => {
+        try {
+            const response = await fetch(
+                'http://localhost:8080/api/users/session',
+                { credentials: 'include' }
+            );
+
+            loggedIn = response.ok;
+        } catch {
+            loggedIn = false;
+        }
+    });
+
+    async function handleLogout() {
+        try {
+            const response = await fetch(
+                'http://localhost:8080/api/users/logout',
+                {
+                    method: 'POST',
+                    credentials: 'include'
+                }
+            );
+
+            if (!response.ok) {
+                alert('Unable to log out. Please try again.');
+                return;
+            }
+
+            loggedIn = false;
+            menuOpen = false;
+
+            await cart.load();
+
+            await goto('/');
+        } catch {
+            alert('Unable to connect to the server.');
+        }
+    }
 </script>
 
 <header>
@@ -18,7 +62,14 @@
         {#if menuOpen}
             <nav aria-label="Main navigation">
                 <a href="/">Shop</a>
-                <a href="/login">Login / Register</a>
+
+                {#if loggedIn}
+                    <button class="logout-button" onclick={handleLogout}>
+                        Logout
+                    </button>
+                {:else}
+                    <a href="/login">Login / Register</a>
+                {/if}
             </nav>
         {/if}
     </div>
@@ -81,6 +132,21 @@
         text-decoration: underline;
     }
 
+    .logout-button {
+        background: transparent;
+        border: none;
+        padding: 0;
+        color: var(--color-text);
+        font: inherit;
+        font-weight: bold;
+        text-align: left;
+        cursor: pointer;
+    }
+
+    .logout-button:hover {
+        text-decoration: underline;
+    }
+
     .menu-toggle,
     .cart-link {
         background: transparent;
@@ -111,7 +177,6 @@
         position: relative;
     }
 
-    
     .cart-link {
         position: relative;
         display: inline-flex;

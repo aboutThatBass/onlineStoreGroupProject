@@ -29,7 +29,7 @@
         <div class="empty-cart">
             <h2>Your cart is empty</h2>
             <p>Looks like you haven't added anything yet.</p>
-            <a href="/shop" class="continue-shopping">
+            <a href="/" class="continue-shopping">
                 Continue Shopping
             </a>
         </div>
@@ -104,7 +104,7 @@
                     Proceed to Checkout
                 </a>
 
-                <a href="/shop" class="back-to-shop">
+                <a href="/" class="back-to-shop">
                     Continue Shopping
                 </a>
             </aside>
