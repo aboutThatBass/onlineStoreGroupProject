@@ -1,4 +1,7 @@
+
 <script lang="ts">
+    import { cart } from '../../lib/stores/cart';
+
     let email = $state('');
     let password = $state('');
 
@@ -28,12 +31,15 @@
 
             const data = await response.json();
 
-        if (response.ok && data.success) {
-            password = '';
-            window.location.href = '/';
-        } else {
-            errorMessage = data.message ?? 'Invalid email or password.';
-        }
+            if (response.ok && data.success) {
+                password = '';
+
+                await cart.loadCart();
+
+                window.location.href = '/';
+            } else {
+                errorMessage = data.message ?? 'Invalid email or password.';
+            }
         } catch (error) {
             errorMessage = 'Unable to connect to the server. Please try again later.';
         } finally {

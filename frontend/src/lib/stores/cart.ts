@@ -1,5 +1,5 @@
 
-import { writable } from 'svelte/store';
+import { writable, get } from 'svelte/store';
 import type { Product } from '../types/Product';
 
 export type CartItem = {
@@ -8,66 +8,178 @@ export type CartItem = {
 };
 
 const API_URL = 'http://localhost:8080/api/cart';
+const SESSION_URL = 'http://localhost:8080/api/users/session';
+const GUEST_KEY = 'viral-vault-guest-cart';
+
+const browser = typeof window !== 'undefined';
+
+function readGuestCart(): CartItem[] {
+    if (!browser) return [];
+
+    try {
+        const saved = localStorage.getItem(GUEST_KEY);
+        const parsed = saved ? JSON.parse(saved) : [];
+
+        return Array.isArray(parsed) ? parsed : [];
+    } catch {
+        return [];
+    }
+}
+
+function writeGuestCart(items: CartItem[]) {
+    if (browser) {
+        localStorage.setItem(GUEST_KEY, JSON.stringify(items));
+    }
+}
 
 function createCart() {
     const { subscribe, set, update } = writable<CartItem[]>([]);
 
     let activeUserId: number | null = null;
     let generation = 0;
-    let pending = Promise.resolve();
+    let pending: Promise<void> = Promise.resolve();
+    let initialized = false;
+    let loading = false;
 
-    async function loadCart() {
-        const currentGeneration = ++generation;
+    function showGuestCart() {
         activeUserId = null;
-        set([]);
+        set(readGuestCart());
+    }
 
-        try {
-            const sessionResponse = await fetch(
-                'http://localhost:8080/api/users/session',
-                { credentials: 'include' }
+    async function fetchAccountCart(): Promise<CartItem[]> {
+        const response = await fetch(API_URL, {
+            credentials: 'include'
+        });
+
+        if (!response.ok) {
+            throw new Error(`Failed to load cart: ${response.status}`);
+        }
+
+        return response.json();
+    }
+
+    async function putQuantity(
+        productId: number,
+        quantity: number
+    ): Promise<CartItem[]> {
+        const response = await fetch(`${API_URL}/${productId}`, {
+            method: 'PUT',
+            credentials: 'include',
+            headers: {
+                'Content-Type': 'application/json'
+            },
+            body: JSON.stringify({ quantity })
+        });
+
+        if (!response.ok) {
+            throw new Error(`Cart update failed: ${response.status}`);
+        }
+
+        return response.json();
+    }
+
+    async function mergeGuestCart(
+        accountItems: CartItem[],
+        currentGeneration: number
+    ): Promise<CartItem[]> {
+        const guestItems = readGuestCart();
+
+        if (guestItems.length === 0) {
+            return accountItems;
+        }
+
+        let mergedItems = accountItems;
+
+        for (const guestItem of guestItems) {
+            if (currentGeneration !== generation) {
+                return mergedItems;
+            }
+
+            const product = guestItem.product;
+
+            if (!product || product.quantity <= 0) {
+                continue;
+            }
+
+            const existing = mergedItems.find(
+                (item) => item.product.id === product.id
             );
 
-            if (!sessionResponse.ok) {
-                return;
+            const quantity = Math.min(
+                (existing?.quantity ?? 0) + guestItem.quantity,
+                product.quantity
+            );
+
+            if (quantity > 0) {
+                mergedItems = await putQuantity(product.id, quantity);
             }
+        }
 
-            const session = await sessionResponse.json();
+        if (currentGeneration === generation) {
+            localStorage.removeItem(GUEST_KEY);
+        }
 
-            if (!session.authenticated || !session.userId) {
-                return;
-            }
+        return mergedItems;
+    }
 
-            const userId = Number(session.userId);
+    async function loadCart() {
+        if (loading) return;
 
-            const response = await fetch(API_URL, {
+        loading = true;
+        const currentGeneration = ++generation;
+
+        try {
+            const response = await fetch(SESSION_URL, {
                 credentials: 'include'
             });
 
+            if (currentGeneration !== generation) return;
+
             if (!response.ok) {
-                throw new Error('Failed to load cart');
+                showGuestCart();
+                return;
             }
 
-            const items: CartItem[] = await response.json();
+            const session = await response.json();
+
+            if (!session.authenticated || !session.userId) {
+                showGuestCart();
+                return;
+            }
+
+            activeUserId = Number(session.userId);
+            set([]);
+
+            let items = await fetchAccountCart();
+
+            if (currentGeneration !== generation) return;
+
+            items = await mergeGuestCart(items, currentGeneration);
 
             if (currentGeneration === generation) {
-                activeUserId = userId;
                 set(items);
             }
         } catch (error) {
             console.error('Error loading cart:', error);
+
+            if (currentGeneration === generation) {
+                if (activeUserId === null) {
+                    showGuestCart();
+                }
+            }
+        } finally {
+            initialized = true;
+            loading = false;
         }
     }
 
     function saveChange(
-        request: () => Promise<Response>
+        request: () => Promise<CartItem[]>
     ) {
         const userId = activeUserId;
         const currentGeneration = generation;
 
-        if (userId === null) {
-            console.warn('Please log in to manage your cart.');
-            return;
-        }
+        if (userId === null) return;
 
         pending = pending
             .catch(() => {})
@@ -80,15 +192,7 @@ function createCart() {
                 }
 
                 try {
-                    const response = await request();
-
-                    if (!response.ok) {
-                        throw new Error(
-                            `Cart update failed: ${response.status}`
-                        );
-                    }
-
-                    const items: CartItem[] = await response.json();
+                    const items = await request();
 
                     if (
                         currentGeneration === generation &&
@@ -104,26 +208,55 @@ function createCart() {
 
     return {
         subscribe,
-
         loadCart,
 
         reset() {
             generation++;
             activeUserId = null;
-            set([]);
+            initialized = true;
+            loading = false;
+            showGuestCart();
         },
 
         addItem(product: Product) {
             if (product.quantity <= 0) return;
 
-            saveChange(async () => {
-                const response = await fetch(API_URL, {
-                    credentials: 'include'
+            if (activeUserId === null) {
+                update((items) => {
+                    const existing = items.find(
+                        (item) => item.product.id === product.id
+                    );
+
+                    let nextItems: CartItem[];
+
+                    if (existing) {
+                        nextItems = items.map((item) =>
+                            item.product.id === product.id
+                                ? {
+                                      ...item,
+                                      quantity: Math.min(
+                                          item.quantity + 1,
+                                          product.quantity
+                                      )
+                                  }
+                                : item
+                        );
+                    } else {
+                        nextItems = [
+                            ...items,
+                            { product, quantity: 1 }
+                        ];
+                    }
+
+                    writeGuestCart(nextItems);
+                    return nextItems;
                 });
 
-                if (!response.ok) return response;
+                return;
+            }
 
-                const items: CartItem[] = await response.json();
+            saveChange(async () => {
+                const items = await fetchAccountCart();
 
                 const existing = items.find(
                     (item) => item.product.id === product.id
@@ -134,46 +267,88 @@ function createCart() {
                     product.quantity
                 );
 
-                return fetch(`${API_URL}/${product.id}`, {
-                    method: 'PUT',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ quantity })
-                });
+                return putQuantity(product.id, quantity);
             });
         },
 
         removeItem(productId: number) {
-            saveChange(() =>
-                fetch(`${API_URL}/${productId}`, {
-                    method: 'DELETE',
-                    credentials: 'include'
-                })
-            );
+            if (activeUserId === null) {
+                update((items) => {
+                    const nextItems = items.filter(
+                        (item) => item.product.id !== productId
+                    );
+
+                    writeGuestCart(nextItems);
+                    return nextItems;
+                });
+
+                return;
+            }
+
+            saveChange(async () => {
+                const response = await fetch(
+                    `${API_URL}/${productId}`,
+                    {
+                        method: 'DELETE',
+                        credentials: 'include'
+                    }
+                );
+
+                if (!response.ok) {
+                    throw new Error('Failed to remove item');
+                }
+
+                return response.json();
+            });
         },
 
         updateQuantity(productId: number, quantity: number) {
-            saveChange(() =>
-                fetch(`${API_URL}/${productId}`, {
-                    method: 'PUT',
-                    credentials: 'include',
-                    headers: {
-                        'Content-Type': 'application/json'
-                    },
-                    body: JSON.stringify({ quantity })
-                })
-            );
+            if (activeUserId === null) {
+                update((items) => {
+                    const nextItems = items.map((item) =>
+                        item.product.id === productId
+                            ? {
+                                  ...item,
+                                  quantity: Math.max(
+                                      1,
+                                      Math.min(
+                                          quantity,
+                                          item.product.quantity
+                                      )
+                                  )
+                              }
+                            : item
+                    );
+
+                    writeGuestCart(nextItems);
+                    return nextItems;
+                });
+
+                return;
+            }
+
+            saveChange(() => putQuantity(productId, quantity));
         },
 
         clearCart() {
-            saveChange(() =>
-                fetch(API_URL, {
+            if (activeUserId === null) {
+                set([]);
+                writeGuestCart([]);
+                return;
+            }
+
+            saveChange(async () => {
+                const response = await fetch(API_URL, {
                     method: 'DELETE',
                     credentials: 'include'
-                })
-            );
+                });
+
+                if (!response.ok) {
+                    throw new Error('Failed to clear cart');
+                }
+
+                return response.json();
+            });
         }
     };
 }

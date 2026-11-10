@@ -1,6 +1,7 @@
 
 <script lang="ts">
     import { onMount } from 'svelte';
+    import { page } from '$app/state';
     import { cart } from '../stores/cart';
 
     let isLoggedIn = $state(false);
@@ -41,13 +42,42 @@
     <a href="/" class="brand">Viral Vault</a>
 
     <nav aria-label="Main navigation">
-        <a href="/">Home</a>
-        <a href="/shop">Shop</a>
-        <a href="/cart">Cart</a>
+        <a
+            href="/"
+            class:active={page.url.pathname === '/'}
+            aria-current={page.url.pathname === '/' ? 'page' : undefined}
+        >
+            Home
+        </a>
+
+        <a
+            href="/shop"
+            class:active={page.url.pathname.startsWith('/shop')}
+            aria-current={page.url.pathname.startsWith('/shop') ? 'page' : undefined}
+        >
+            Shop
+        </a>
+
+        <a
+            href="/cart"
+            class:active={page.url.pathname.startsWith('/cart')}
+            aria-current={page.url.pathname.startsWith('/cart') ? 'page' : undefined}
+        >
+            Cart
+        </a>
+
         {#if isLoggedIn}
-            <button type="button" onclick={logout}>Logout</button>
+            <button type="button" onclick={logout}>
+                Logout
+            </button>
         {:else}
-            <a href="/login">Login / Register</a>
+            <a
+                href="/login"
+                class:active={page.url.pathname === '/login' || page.url.pathname === '/register'}
+                aria-current={page.url.pathname === '/login' || page.url.pathname === '/register' ? 'page' : undefined}
+            >
+                Login / Register
+            </a>
         {/if}
     </nav>
 </header>
@@ -76,6 +106,7 @@
         display: flex;
         flex-wrap: wrap;
         gap: 1.5rem;
+        align-items: center;
     }
 
     nav a,
@@ -83,6 +114,9 @@
         color: var(--color-text);
         text-decoration: none;
         font-weight: bold;
+        font-size: inherit;
+        font-family: inherit;
+        line-height: inherit;
     }
 
     nav a:hover,
@@ -90,11 +124,16 @@
         text-decoration: underline;
     }
 
+    nav a.active {
+        text-decoration: underline;
+        text-decoration-thickness: 2px;
+        text-underline-offset: 5px;
+    }
+
     nav button {
         background: none;
         border: none;
         padding: 0;
-        font: inherit;
         cursor: pointer;
     }
 </style>
