@@ -1,4 +1,6 @@
+
 import { clearCart, getCart } from './cart';
+import { calculatePricing } from './pricing';
 
 export type CheckoutDetails = {
     firstName: string;
@@ -17,7 +19,8 @@ export type OrderConfirmation = {
 };
 
 export async function submitOrder(
-    customer: CheckoutDetails
+    customer: CheckoutDetails,
+    discountCode: string = ''
 ): Promise<OrderConfirmation> {
     const items = await getCart();
 
@@ -25,14 +28,20 @@ export async function submitOrder(
         throw new Error('Cannot checkout with an empty cart');
     }
 
-    const total = items.reduce(
+    const subtotal = items.reduce(
         (sum, item) => sum + item.product.price * item.quantity,
         0
     );
 
+    const pricing = calculatePricing(subtotal, discountCode);
+
+    if (!pricing.validDiscount) {
+        throw new Error('Invalid discount code.');
+    }
+
     const order: OrderConfirmation = {
         orderId: `VV-${Date.now()}`,
-        total: Math.round(total * 100) / 100,
+        total: pricing.total,
         customer
     };
 

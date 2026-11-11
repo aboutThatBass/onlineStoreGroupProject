@@ -1,6 +1,7 @@
 
 <script lang="ts">
     import { cart } from '../../lib/stores/cart.svelte';
+    import { calculatePricing } from '../../lib/data/pricing';
     import {
         submitOrder,
         type CheckoutDetails,
@@ -21,6 +22,26 @@
     let error = $state('');
     let confirmation = $state<OrderConfirmation | null>(null);
 
+    let discountCode = $state('');
+    let appliedDiscountCode = $state('');
+    let discountError = $state('');
+
+    let pricing = $derived(
+        calculatePricing(cart.subtotal, appliedDiscountCode)
+    );
+
+    function applyDiscount() {
+        const result = calculatePricing(cart.subtotal, discountCode);
+
+        if (!result.validDiscount) {
+            discountError = 'Invalid discount code.';
+            return;
+        }
+
+        appliedDiscountCode = discountCode.trim().toUpperCase();
+        discountError = '';
+    }
+
     async function handleCheckout(event: SubmitEvent) {
         event.preventDefault();
 
@@ -30,8 +51,8 @@
         error = '';
 
         try {
-            confirmation = await submitOrder(customer);
-            await cart.load();
+          confirmation = await submitOrder(customer, appliedDiscountCode);
+          await cart.load();
         } catch (err) {
             error = err instanceof Error
                 ? err.message
@@ -173,14 +194,62 @@
 
                 <hr />
 
-                <div class="summary-item">
-                    <strong>Subtotal</strong>
-                    <strong>${cart.subtotal.toFixed(2)}</strong>
-                </div>
+            <div class="discount-section">
+                <label for="discount-code">Discount Code</label>
 
-                <p class="demo-note">
-                    Shipping and taxes are not included in this demo.
-                </p>
+                <input
+                    id="discount-code"
+                    type="text"
+                    bind:value={discountCode}
+                    placeholder="Enter discount code"
+                />
+
+                <button
+                    type="button"
+                    class="apply-discount"
+                    onclick={applyDiscount}
+                >
+                    Apply
+                </button>
+
+                {#if discountError}
+                    <p class="error">{discountError}</p>
+                {/if}
+
+                {#if pricing.discount > 0}
+                    <p class="discount-success">
+                        Discount applied successfully!
+                    </p>
+                {/if}
+            </div>
+
+            <div class="summary-item">
+                <strong>Subtotal</strong>
+                <strong>${pricing.subtotal.toFixed(2)}</strong>
+            </div>
+
+            {#if pricing.discount > 0}
+                <div class="summary-item">
+                    <span>Discount ({pricing.discountCode})</span>
+                    <strong>-${pricing.discount.toFixed(2)}</strong>
+                </div>
+            {/if}
+
+            <div class="summary-item">
+                <span>Sales Tax (8.25%)</span>
+                <strong>${pricing.tax.toFixed(2)}</strong>
+            </div>
+
+            <hr />
+
+            <div class="summary-item">
+                <strong>Total</strong>
+                <strong>${pricing.total.toFixed(2)}</strong>
+            </div>
+
+            <p class="demo-note">
+                Sales tax included. Shipping is not charged in this demo.
+            </p>
             </aside>
         </div>
     {/if}
@@ -296,4 +365,25 @@
             padding: 1.25rem;
         }
     }
+
+    .discount-section {
+        margin: 1.5rem 0;
+    }
+
+    .apply-discount {
+        margin-top: 0.5rem;
+        padding: 0.6rem 1rem;
+        background: #222;
+        color: white;
+        border: none;
+        border-radius: 5px;
+        cursor: pointer;
+    }
+
+    .discount-success {
+        color: #15803d;
+        font-size: 0.85rem;
+        margin-top: 0.5rem;
+    }
+
 </style>

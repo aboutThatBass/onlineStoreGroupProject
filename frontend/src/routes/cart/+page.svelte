@@ -2,6 +2,10 @@
 <script lang="ts">
     import { cart } from '../../lib/stores/cart.svelte';
 
+    import { calculatePricing } from '../../lib/data/pricing';
+
+    let pricing = $derived(calculatePricing(cart.subtotal));
+
     async function changeQuantity(
         productId: number,
         quantity: number
@@ -93,11 +97,23 @@
 
                 <div class="summary-row">
                     <span>Subtotal</span>
-                    <strong>${cart.subtotal.toFixed(2)}</strong>
+                    <strong>${pricing.subtotal.toFixed(2)}</strong>
+                </div>
+
+                <div class="summary-row">
+                    <span>Sales Tax (8.25%)</span>
+                    <strong>${pricing.tax.toFixed(2)}</strong>
+                </div>
+
+                <hr />
+
+                <div class="summary-row">
+                    <strong>Estimated Total</strong>
+                    <strong>${pricing.total.toFixed(2)}</strong>
                 </div>
 
                 <p class="shipping-note">
-                    Shipping and taxes calculated at checkout.
+                    Discounts can be applied at checkout. Shipping is free.
                 </p>
 
                 <a href="/checkout" class="checkout-button">
