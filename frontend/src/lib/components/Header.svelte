@@ -64,12 +64,14 @@
                 <a href="/">Shop</a>
 
                 {#if loggedIn}
-                    <button class="logout-button" onclick={handleLogout}>
-                        Logout
-                    </button>
-                {:else}
-                    <a href="/login">Login / Register</a>
-                {/if}
+                <a href="/orders">My Orders</a>
+
+                <button class="logout-button" onclick={handleLogout}>
+                    Logout
+                </button>
+            {:else}
+                <a href="/login">Login / Register</a>
+            {/if}
             </nav>
         {/if}
     </div>

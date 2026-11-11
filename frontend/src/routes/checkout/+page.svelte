@@ -31,34 +31,56 @@
     );
 
     function applyDiscount() {
-        const result = calculatePricing(cart.subtotal, discountCode);
+        const result = calculatePricing(
+            cart.subtotal,
+            discountCode
+        );
 
         if (!result.validDiscount) {
             discountError = 'Invalid discount code.';
             return;
         }
 
-        appliedDiscountCode = discountCode.trim().toUpperCase();
+        appliedDiscountCode =
+            discountCode.trim().toUpperCase();
+
         discountError = '';
     }
 
     async function handleCheckout(event: SubmitEvent) {
         event.preventDefault();
 
-        if (submitting || cart.items.length === 0) return;
+        if (submitting || cart.items.length === 0) {
+            return;
+        }
 
         submitting = true;
         error = '';
 
         try {
-          confirmation = await submitOrder(customer, appliedDiscountCode);
-          await cart.load();
+            confirmation = await submitOrder(
+                customer,
+                appliedDiscountCode
+            );
         } catch (err) {
             error = err instanceof Error
                 ? err.message
                 : 'Checkout failed. Please try again.';
         } finally {
             submitting = false;
+        }
+
+        // The order is already saved at this point.
+        // Refreshing the cart must not trigger a second purchase.
+        if (confirmation) {
+            try {
+                await cart.load();
+            } catch (err) {
+                console.error(
+                    'Order saved, but cart refresh failed:',
+                    err
+                );
+            }
         }
     }
 </script>
@@ -71,20 +93,43 @@
     {#if confirmation}
         <section class="confirmation">
             <h1>Order Placed!</h1>
-            <p>Thank you, {confirmation.customer.firstName}!</p>
-            <p>Your demo order has been created successfully.</p>
+
+            <p>
+                Thank you, {confirmation.customer.firstName}!
+            </p>
+
+            <p>
+                Your order has been saved successfully.
+            </p>
 
             <h2>Order #{confirmation.orderId}</h2>
-            <p>Total: ${confirmation.total.toFixed(2)}</p>
 
-            <a href="/">Return to Store</a>
+            <p>
+                Total: ${confirmation.total.toFixed(2)}
+            </p>
+
+            <p class="demo-note">
+                This is a demo purchase. No payment was
+                collected, and shipping details were not saved.
+            </p>
+
+            <div class="confirmation-links">
+                <a href="/orders">View My Orders</a>
+                <a href="/">Return to Store</a>
+            </div>
         </section>
+
     {:else if cart.items.length === 0}
         <section class="empty-checkout">
             <h1>Your cart is empty</h1>
-            <p>Add some products before checking out.</p>
+
+            <p>
+                Add some products before checking out.
+            </p>
+
             <a href="/">Continue Shopping</a>
         </section>
+
     {:else}
         <h1>Checkout</h1>
 
@@ -163,18 +208,24 @@
                 </div>
 
                 {#if error}
-                    <p class="error" role="alert">{error}</p>
+                    <p class="error" role="alert">
+                        {error}
+                    </p>
                 {/if}
 
                 <button
                     type="submit"
                     disabled={submitting || cart.loading}
                 >
-                    {submitting ? 'Placing Order...' : 'Place Order'}
+                    {submitting
+                        ? 'Placing Order...'
+                        : 'Place Order'}
                 </button>
 
                 <p class="demo-note">
                     Demo checkout — no payment will be collected.
+                    Please log in to place an order.
+                    Shipping details are not saved.
                 </p>
             </form>
 
@@ -186,6 +237,7 @@
                         <span>
                             {item.product.name} × {item.quantity}
                         </span>
+
                         <strong>
                             ${(item.product.price * item.quantity).toFixed(2)}
                         </strong>
@@ -194,62 +246,78 @@
 
                 <hr />
 
-            <div class="discount-section">
-                <label for="discount-code">Discount Code</label>
+                <div class="discount-section">
+                    <label for="discount-code">
+                        Discount Code
+                    </label>
 
-                <input
-                    id="discount-code"
-                    type="text"
-                    bind:value={discountCode}
-                    placeholder="Enter discount code"
-                />
+                    <input
+                        id="discount-code"
+                        type="text"
+                        bind:value={discountCode}
+                        placeholder="Enter discount code"
+                    />
 
-                <button
-                    type="button"
-                    class="apply-discount"
-                    onclick={applyDiscount}
-                >
-                    Apply
-                </button>
+                    <button
+                        type="button"
+                        class="apply-discount"
+                        onclick={applyDiscount}
+                    >
+                        Apply
+                    </button>
 
-                {#if discountError}
-                    <p class="error">{discountError}</p>
-                {/if}
+                    {#if discountError}
+                        <p class="error">
+                            {discountError}
+                        </p>
+                    {/if}
+
+                    {#if pricing.discount > 0}
+                        <p class="discount-success">
+                            Discount applied successfully!
+                        </p>
+                    {/if}
+                </div>
+
+                <div class="summary-item">
+                    <strong>Subtotal</strong>
+                    <strong>
+                        ${pricing.subtotal.toFixed(2)}
+                    </strong>
+                </div>
 
                 {#if pricing.discount > 0}
-                    <p class="discount-success">
-                        Discount applied successfully!
-                    </p>
+                    <div class="summary-item">
+                        <span>
+                            Discount ({pricing.discountCode})
+                        </span>
+
+                        <strong>
+                            -${pricing.discount.toFixed(2)}
+                        </strong>
+                    </div>
                 {/if}
-            </div>
 
-            <div class="summary-item">
-                <strong>Subtotal</strong>
-                <strong>${pricing.subtotal.toFixed(2)}</strong>
-            </div>
-
-            {#if pricing.discount > 0}
                 <div class="summary-item">
-                    <span>Discount ({pricing.discountCode})</span>
-                    <strong>-${pricing.discount.toFixed(2)}</strong>
+                    <span>Sales Tax (8.25%)</span>
+                    <strong>
+                        ${pricing.tax.toFixed(2)}
+                    </strong>
                 </div>
-            {/if}
 
-            <div class="summary-item">
-                <span>Sales Tax (8.25%)</span>
-                <strong>${pricing.tax.toFixed(2)}</strong>
-            </div>
+                <hr />
 
-            <hr />
+                <div class="summary-item">
+                    <strong>Total</strong>
+                    <strong>
+                        ${pricing.total.toFixed(2)}
+                    </strong>
+                </div>
 
-            <div class="summary-item">
-                <strong>Total</strong>
-                <strong>${pricing.total.toFixed(2)}</strong>
-            </div>
-
-            <p class="demo-note">
-                Sales tax included. Shipping is not charged in this demo.
-            </p>
+                <p class="demo-note">
+                    Sales tax included. Shipping is not
+                    charged in this demo.
+                </p>
             </aside>
         </div>
     {/if}
@@ -356,6 +424,13 @@
         margin-top: 1.5rem;
     }
 
+    .confirmation-links {
+        display: flex;
+        justify-content: center;
+        gap: 1.5rem;
+        flex-wrap: wrap;
+    }
+
     @media (max-width: 768px) {
         .checkout-layout, .name-row {
             grid-template-columns: 1fr;
@@ -385,5 +460,4 @@
         font-size: 0.85rem;
         margin-top: 0.5rem;
     }
-
 </style>
