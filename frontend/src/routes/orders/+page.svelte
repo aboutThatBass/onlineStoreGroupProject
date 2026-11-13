@@ -29,11 +29,12 @@
     let error = $state('');
     let notLoggedIn = $state(false);
 
-    // Search and sorting
     let searchQuery = $state('');
     let sortBy = $state<SortOption>('newest');
 
     function getDateTimestamp(value: string): number {
+        if (!value) return 0;
+
         const timestamp = new Date(
             value.replace(' ', 'T')
         ).getTime();
@@ -41,17 +42,20 @@
         return Number.isNaN(timestamp) ? 0 : timestamp;
     }
 
-    // Automatically updates when search, sort, or orders change
+    // Automatically update results when searching or sorting
     let filteredOrders = $derived.by(() => {
         const query = searchQuery.trim().toLowerCase();
 
         const matchingOrders = orders.filter((order) => {
             if (!query) return true;
 
+            const orderNumberQuery = query
+                .replace(/^order\s*#?\s*/, '')
+                .replace(/^#/, '');
+
             const matchesOrderNumber =
-                String(order.orderId).includes(
-                    query.replace(/^#/, '').replace(/^order\s*#?\s*/, '')
-                );
+                orderNumberQuery.length > 0 &&
+                String(order.orderId).includes(orderNumberQuery);
 
             const matchesStatus =
                 order.status.toLowerCase().includes(query);
@@ -232,14 +236,6 @@
             </div>
         </section>
 
-        <div class="results-info">
-            <p>
-                Showing {filteredOrders.length}
-                of {orders.length}
-                {orders.length === 1 ? 'order' : 'orders'}
-            </p>
-        </div>
-
         {#if filteredOrders.length === 0}
             <section class="message">
                 <h2>No matching orders</h2>
@@ -262,7 +258,6 @@
             <div class="orders-list">
                 {#each filteredOrders as order (order.orderId)}
                     <section class="order-card">
-
                         <div class="order-header">
                             <div>
                                 <h2>Order #{order.orderId}</h2>
@@ -277,7 +272,6 @@
                         <div class="order-items">
                             {#each order.items as item}
                                 <div class="order-item">
-
                                     {#if item.image_url}
                                         <img
                                             src={item.image_url}
@@ -316,11 +310,19 @@
                                 ${formatMoney(order.totalAmount)}
                             </strong>
                         </div>
-
                     </section>
                 {/each}
             </div>
         {/if}
+
+        <!-- Order count at the bottom -->
+        <div class="results-info">
+            <p>
+                Showing {filteredOrders.length}
+                of {orders.length}
+                {orders.length === 1 ? 'order' : 'orders'}
+            </p>
+        </div>
     {/if}
 </main>
 
@@ -363,10 +365,10 @@
         display: flex;
         align-items: flex-end;
         gap: 1.5rem;
-        margin-bottom: 1rem;
+        margin-bottom: 1.5rem;
         padding: 1.5rem;
-        background: #fff8f1;
-        border: 1px solid #eaded3;
+        background: transparent;
+        border: 1px solid #ddd;
         border-radius: 10px;
     }
 
@@ -437,10 +439,14 @@
         background: #f2f2f2;
     }
 
+    /* Order count below the cards */
+
     .results-info {
-        margin-bottom: 1.5rem;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
         color: #777;
         font-size: 0.9rem;
+        text-align: center;
     }
 
     .results-info p {
@@ -462,7 +468,7 @@
         background: #d99458;
     }
 
-    /* Existing order cards */
+    /* Order cards */
 
     .orders-list {
         display: flex;

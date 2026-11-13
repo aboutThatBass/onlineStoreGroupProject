@@ -21,6 +21,33 @@
         }
     });
 
+    function openMenu() {
+        menuOpen = true;
+    }
+
+    function closeMenu() {
+        menuOpen = false;
+    }
+
+    function toggleMenu() {
+        menuOpen = !menuOpen;
+    }
+
+    function handleMenuKeydown(event: KeyboardEvent) {
+        if (event.key === 'Escape') {
+            closeMenu();
+        }
+    }
+
+    function handleMenuFocusOut(event: FocusEvent) {
+        const container = event.currentTarget as HTMLElement;
+        const nextElement = event.relatedTarget as Node | null;
+
+        if (!nextElement || !container.contains(nextElement)) {
+            closeMenu();
+        }
+    }
+
     async function handleLogout() {
         try {
             const response = await fetch(
@@ -37,7 +64,7 @@
             }
 
             loggedIn = false;
-            menuOpen = false;
+            closeMenu();
 
             await cart.load();
 
@@ -49,23 +76,59 @@
 </script>
 
 <header>
-    <div class="menu-container">
+    <div
+        class="menu-container"
+        onpointerenter={(event) => {
+            if (event.pointerType === 'mouse') {
+                openMenu();
+            }
+        }}
+        onpointerleave={(event) => {
+            if (event.pointerType === 'mouse') {
+                closeMenu();
+            }
+        }}
+        onfocusout={handleMenuFocusOut}
+        onkeydown={handleMenuKeydown}
+        role="group"
+        aria-label="Navigation menu"
+    >
         <button
             class="menu-toggle"
             aria-label="Toggle navigation menu"
             aria-expanded={menuOpen}
-            onclick={() => menuOpen = !menuOpen}
+            aria-controls="main-navigation"
+            onclick={toggleMenu}
         >
             <Menu size={28} strokeWidth={2} />
         </button>
 
         {#if menuOpen}
-            <nav aria-label="Main navigation">
-                <a href="/">Shop</a>
+            <nav
+                id="main-navigation"
+                aria-label="Main navigation"
+            >
+                <a
+                    href="/"
+                    onclick={closeMenu}
+                >
+                    Shop
+                </a>
 
                 {#if loggedIn}
-                    <a href="/profile">My Profile</a>
-                    <a href="/orders">My Orders</a>
+                    <a
+                        href="/profile"
+                        onclick={closeMenu}
+                    >
+                        My Profile
+                    </a>
+
+                    <a
+                        href="/orders"
+                        onclick={closeMenu}
+                    >
+                        My Orders
+                    </a>
 
                     <button
                         class="logout-button"
@@ -74,7 +137,12 @@
                         Logout
                     </button>
                 {:else}
-                    <a href="/login">Login / Register</a>
+                    <a
+                        href="/login"
+                        onclick={closeMenu}
+                    >
+                        Login / Register
+                    </a>
                 {/if}
             </nav>
         {/if}
@@ -115,11 +183,15 @@
         color: var(--color-text);
     }
 
+    .menu-container {
+        position: relative;
+    }
+
     nav {
         position: absolute;
         top: 100%;
         left: 0;
-        z-index: 10;
+        z-index: 100;
 
         display: flex;
         flex-direction: column;
@@ -130,6 +202,8 @@
         border-radius: 8px;
         padding: 1rem;
         min-width: 180px;
+
+        box-shadow: 0 4px 12px rgba(0, 0, 0, 0.12);
     }
 
     nav a {
@@ -169,7 +243,6 @@
         display: flex;
         align-items: center;
         justify-content: center;
-        margin-left: auto;
 
         color: var(--color-text);
         cursor: pointer;
@@ -183,8 +256,10 @@
         background-color: #d88f83;
     }
 
-    .menu-container {
-        position: relative;
+    .menu-toggle:focus-visible,
+    .cart-link:focus-visible {
+        outline: 2px solid var(--color-text);
+        outline-offset: 3px;
     }
 
     .cart-link {
@@ -192,11 +267,12 @@
         display: inline-flex;
         align-items: center;
         justify-content: center;
+        margin-left: auto;
     }
 
     .cart-dot {
         position: absolute;
-        bottom: .5px;
+        bottom: 0.5px;
         left: 0.5px;
         width: 12px;
         height: 12px;
