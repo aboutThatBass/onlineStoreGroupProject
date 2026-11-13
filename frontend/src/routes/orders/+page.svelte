@@ -18,10 +18,80 @@
         items: OrderItem[];
     };
 
+    type SortOption =
+        | 'newest'
+        | 'oldest'
+        | 'highest'
+        | 'lowest';
+
     let orders = $state<Order[]>([]);
     let loading = $state(true);
     let error = $state('');
     let notLoggedIn = $state(false);
+
+    // Search and sorting
+    let searchQuery = $state('');
+    let sortBy = $state<SortOption>('newest');
+
+    function getDateTimestamp(value: string): number {
+        const timestamp = new Date(
+            value.replace(' ', 'T')
+        ).getTime();
+
+        return Number.isNaN(timestamp) ? 0 : timestamp;
+    }
+
+    // Automatically updates when search, sort, or orders change
+    let filteredOrders = $derived.by(() => {
+        const query = searchQuery.trim().toLowerCase();
+
+        const matchingOrders = orders.filter((order) => {
+            if (!query) return true;
+
+            const matchesOrderNumber =
+                String(order.orderId).includes(
+                    query.replace(/^#/, '').replace(/^order\s*#?\s*/, '')
+                );
+
+            const matchesStatus =
+                order.status.toLowerCase().includes(query);
+
+            const matchesProduct = order.items.some((item) =>
+                (item.product_name ?? '')
+                    .toLowerCase()
+                    .includes(query)
+            );
+
+            return (
+                matchesOrderNumber ||
+                matchesStatus ||
+                matchesProduct
+            );
+        });
+
+        return [...matchingOrders].sort((a, b) => {
+            switch (sortBy) {
+                case 'oldest':
+                    return (
+                        getDateTimestamp(a.orderDate) -
+                        getDateTimestamp(b.orderDate)
+                    );
+
+                case 'highest':
+                    return b.totalAmount - a.totalAmount;
+
+                case 'lowest':
+                    return a.totalAmount - b.totalAmount;
+
+                case 'newest':
+                default:
+                    return (
+                        getDateTimestamp(b.orderDate) -
+                        getDateTimestamp(a.orderDate)
+                    );
+            }
+        });
+    });
 
     onMount(async () => {
         try {
@@ -66,6 +136,10 @@
     function formatMoney(value: number): string {
         return Number(value).toFixed(2);
     }
+
+    function clearSearch(): void {
+        searchQuery = '';
+    }
 </script>
 
 <svelte:head>
@@ -102,57 +176,151 @@
         </section>
 
     {:else}
-        <div class="orders-list">
-            {#each orders as order (order.orderId)}
-                <section class="order-card">
-                    <div class="order-header">
-                        <div>
-                            <h2>Order #{order.orderId}</h2>
-                            <p>{formatDate(order.orderDate)}</p>
+
+        <!-- Search and sorting controls -->
+        <section class="order-controls">
+            <div class="search-container">
+                <label for="order-search">
+                    Search Orders
+                </label>
+
+                <div class="search-input-wrapper">
+                    <input
+                        id="order-search"
+                        type="search"
+                        placeholder="Order #, product, or status..."
+                        bind:value={searchQuery}
+                    />
+
+                    {#if searchQuery}
+                        <button
+                            type="button"
+                            class="clear-button"
+                            onclick={clearSearch}
+                        >
+                            Clear
+                        </button>
+                    {/if}
+                </div>
+            </div>
+
+            <div class="sort-container">
+                <label for="order-sort">
+                    Sort By
+                </label>
+
+                <select
+                    id="order-sort"
+                    bind:value={sortBy}
+                >
+                    <option value="newest">
+                        Date: Newest First
+                    </option>
+
+                    <option value="oldest">
+                        Date: Oldest First
+                    </option>
+
+                    <option value="highest">
+                        Cost: Highest First
+                    </option>
+
+                    <option value="lowest">
+                        Cost: Lowest First
+                    </option>
+                </select>
+            </div>
+        </section>
+
+        <div class="results-info">
+            <p>
+                Showing {filteredOrders.length}
+                of {orders.length}
+                {orders.length === 1 ? 'order' : 'orders'}
+            </p>
+        </div>
+
+        {#if filteredOrders.length === 0}
+            <section class="message">
+                <h2>No matching orders</h2>
+
+                <p>
+                    We couldn't find any orders matching
+                    your search.
+                </p>
+
+                <button
+                    type="button"
+                    class="reset-button"
+                    onclick={clearSearch}
+                >
+                    Clear Search
+                </button>
+            </section>
+
+        {:else}
+            <div class="orders-list">
+                {#each filteredOrders as order (order.orderId)}
+                    <section class="order-card">
+
+                        <div class="order-header">
+                            <div>
+                                <h2>Order #{order.orderId}</h2>
+                                <p>{formatDate(order.orderDate)}</p>
+                            </div>
+
+                            <span class="status">
+                                {order.status}
+                            </span>
                         </div>
 
-                        <span class="status">{order.status}</span>
-                    </div>
+                        <div class="order-items">
+                            {#each order.items as item}
+                                <div class="order-item">
 
-                    <div class="order-items">
-                        {#each order.items as item}
-                            <div class="order-item">
-                                {#if item.image_url}
-                                    <img
-                                        src={item.image_url}
-                                        alt={item.product_name ?? 'Product'}
-                                    />
-                                {/if}
+                                    {#if item.image_url}
+                                        <img
+                                            src={item.image_url}
+                                            alt={item.product_name ?? 'Product'}
+                                        />
+                                    {/if}
 
-                                <div class="item-details">
+                                    <div class="item-details">
+                                        <strong>
+                                            {item.product_name ?? 'Product unavailable'}
+                                        </strong>
+
+                                        <p>
+                                            Quantity: {item.quantity}
+                                        </p>
+
+                                        <p>
+                                            Price each:
+                                            ${formatMoney(item.price_at_purchase)}
+                                        </p>
+                                    </div>
+
                                     <strong>
-                                        {item.product_name ?? 'Product unavailable'}
+                                        ${formatMoney(
+                                            item.price_at_purchase *
+                                            item.quantity
+                                        )}
                                     </strong>
-                                    <p>Quantity: {item.quantity}</p>
-                                    <p>
-                                        Price each:
-                                        ${formatMoney(item.price_at_purchase)}
-                                    </p>
                                 </div>
+                            {/each}
+                        </div>
 
-                                <strong>
-                                    ${formatMoney(
-                                        item.price_at_purchase * item.quantity
-                                    )}
-                                </strong>
-                            </div>
-                        {/each}
-                    </div>
+                        <div class="order-footer">
+                            <strong>
+                                Order Total:
+                                ${formatMoney(order.totalAmount)}
+                            </strong>
+                        </div>
 
-                    <div class="order-footer">
-                        <strong>
-                            Order Total:
-                            ${formatMoney(order.totalAmount)}
-                        </strong>
-                    </div>
-                </section>
-            {/each}
-        </div>
+                    </section>
+                {/each}
+            </div>
+        {/if}
     {/if}
 </main>
 
@@ -188,6 +356,113 @@
         display: inline-block;
         margin-top: 1rem;
     }
+
+    /* Search and sorting */
+
+    .order-controls {
+        display: flex;
+        align-items: flex-end;
+        gap: 1.5rem;
+        margin-bottom: 1rem;
+        padding: 1.5rem;
+        background: #fff8f1;
+        border: 1px solid #eaded3;
+        border-radius: 10px;
+    }
+
+    .search-container {
+        flex: 1;
+        min-width: 0;
+    }
+
+    .sort-container {
+        width: 250px;
+        flex-shrink: 0;
+    }
+
+    .search-container label,
+    .sort-container label {
+        display: block;
+        margin-bottom: 0.6rem;
+        font-weight: 600;
+        font-size: 0.95rem;
+    }
+
+    .search-input-wrapper {
+        display: flex;
+        align-items: center;
+        gap: 0.5rem;
+    }
+
+    .search-input-wrapper input {
+        flex: 1;
+        min-width: 0;
+        width: 100%;
+        padding: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background: white;
+        color: #222;
+    }
+
+    .sort-container select {
+        width: 100%;
+        padding: 0.8rem;
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        font-size: 0.95rem;
+        background: white;
+        color: #222;
+        cursor: pointer;
+    }
+
+    .search-input-wrapper input:focus,
+    .sort-container select:focus {
+        outline: 2px solid #e8a66b;
+        outline-offset: 1px;
+    }
+
+    .clear-button {
+        border: 1px solid #ccc;
+        border-radius: 6px;
+        background: white;
+        color: #333;
+        padding: 0.8rem;
+        cursor: pointer;
+        white-space: nowrap;
+    }
+
+    .clear-button:hover {
+        background: #f2f2f2;
+    }
+
+    .results-info {
+        margin-bottom: 1.5rem;
+        color: #777;
+        font-size: 0.9rem;
+    }
+
+    .results-info p {
+        margin: 0;
+    }
+
+    .reset-button {
+        margin-top: 1rem;
+        padding: 0.8rem 1.5rem;
+        border: none;
+        border-radius: 6px;
+        background: #e8a66b;
+        color: #222;
+        font-weight: 600;
+        cursor: pointer;
+    }
+
+    .reset-button:hover {
+        background: #d99458;
+    }
+
+    /* Existing order cards */
 
     .orders-list {
         display: flex;
@@ -259,6 +534,17 @@
     }
 
     @media (max-width: 600px) {
+        .order-controls {
+            flex-direction: column;
+            align-items: stretch;
+            padding: 1rem;
+        }
+
+        .search-container,
+        .sort-container {
+            width: 100%;
+        }
+
         .order-header {
             flex-direction: column;
         }
