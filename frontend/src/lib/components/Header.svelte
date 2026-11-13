@@ -64,21 +64,29 @@
                 <a href="/">Shop</a>
 
                 {#if loggedIn}
-                <a href="/orders">My Orders</a>
+                    <a href="/profile">My Profile</a>
+                    <a href="/orders">My Orders</a>
 
-                <button class="logout-button" onclick={handleLogout}>
-                    Logout
-                </button>
-            {:else}
-                <a href="/login">Login / Register</a>
-            {/if}
+                    <button
+                        class="logout-button"
+                        onclick={handleLogout}
+                    >
+                        Logout
+                    </button>
+                {:else}
+                    <a href="/login">Login / Register</a>
+                {/if}
             </nav>
         {/if}
     </div>
 
     <a href="/" class="brand">Viral Vault</a>
 
-    <a href="/cart" class="cart-link" aria-label="Shopping cart">
+    <a
+        href="/cart"
+        class="cart-link"
+        aria-label="Shopping cart"
+    >
         <ShoppingCart size={28} strokeWidth={2} />
 
         {#if cart.hasItems}

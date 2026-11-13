@@ -93,4 +93,83 @@ public class UserRepository {
 
         return users.stream().findFirst();
     }
+
+
+    public Optional<User> findById(Long userId) {
+        String sql = """
+            SELECT user_id, username, full_name, email,
+                   phone_number, address, city, state,
+                   zip_code, is_admin
+            FROM users
+            WHERE user_id = ?
+            """;
+
+        List<User> users = jdbcTemplate.query(
+            sql,
+            (rs, rowNum) -> {
+                User user = new User();
+
+                user.setId(rs.getLong("user_id"));
+                user.setUsername(rs.getString("username"));
+                user.setFullName(rs.getString("full_name"));
+                user.setEmail(rs.getString("email"));
+                user.setPhoneNumber(rs.getString("phone_number"));
+                user.setAddress(rs.getString("address"));
+                user.setCity(rs.getString("city"));
+                user.setState(rs.getString("state"));
+                user.setZipCode(rs.getString("zip_code"));
+                user.setAdmin(rs.getBoolean("is_admin"));
+
+                return user;
+            },
+            userId
+        );
+
+        return users.stream().findFirst();
+    }
+
+    public boolean emailUsedByAnotherUser(
+            String email, Long userId) {
+
+        Integer count = jdbcTemplate.queryForObject(
+            """
+            SELECT COUNT(*)
+            FROM users
+            WHERE LOWER(email) = LOWER(?)
+              AND user_id <> ?
+            """,
+            Integer.class,
+            email,
+            userId
+        );
+
+        return count != null && count > 0;
+    }
+
+    public int updateProfile(User user) {
+        String sql = """
+            UPDATE users
+            SET full_name = ?,
+                email = ?,
+                phone_number = ?,
+                address = ?,
+                city = ?,
+                state = ?,
+                zip_code = ?
+            WHERE user_id = ?
+            """;
+
+        return jdbcTemplate.update(
+            sql,
+            user.getFullName(),
+            user.getEmail(),
+            user.getPhoneNumber(),
+            user.getAddress(),
+            user.getCity(),
+            user.getState(),
+            user.getZipCode(),
+            user.getId()
+        );
+    }
+
 }
