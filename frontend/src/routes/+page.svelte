@@ -99,10 +99,6 @@
     {:else if error}
         <p>{error}</p>
     {:else}
-        <p class="results-count">
-            Showing {filteredProducts.length} of {products.length} products
-        </p>
-
         {#if filteredProducts.length > 0}
             <section class="product-grid">
                 {#each filteredProducts as product (product.id)}
@@ -115,6 +111,12 @@
                 <p>Try searching for a different product or description.</p>
             </div>
         {/if}
+
+        <!-- Product count moved below the product cards -->
+        <p class="results-count">
+            Showing {filteredProducts.length} of {products.length}
+            {products.length === 1 ? 'product' : 'products'}
+        </p>
     {/if}
 </main>
 
@@ -162,8 +164,11 @@
     }
 
     .results-count {
-        margin-top: 1.5rem;
-        color: #555;
+        margin-top: 2rem;
+        margin-bottom: 1rem;
+        color: #777;
+        font-size: 0.9rem;
+        text-align: center;
     }
 
     .product-grid {
@@ -173,7 +178,7 @@
             minmax(min(250px, 100%), 1fr)
         );
         gap: 1.5rem;
-        margin-top: 1rem;
+        margin-top: 1.5rem;
     }
 
     .no-results {
