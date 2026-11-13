@@ -27,7 +27,16 @@
         zipCode: ''
     });
 
-    let originalProfile = $state<Profile>({ ...profile });
+    let originalProfile = $state<Profile>({
+        username: '',
+        fullName: '',
+        email: '',
+        phoneNumber: '',
+        address: '',
+        city: '',
+        state: '',
+        zipCode: ''
+    });
 
     let loading = $state(true);
     let saving = $state(false);
