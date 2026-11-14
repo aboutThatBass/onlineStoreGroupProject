@@ -252,14 +252,21 @@
                         <a href="/profile" onclick={closeMenus}>
                             My Profile
                         </a>
-
-                        <button type="button" onclick={handleLogout}>
-                            Logout
-                        </button>
                     {:else}
                         <a href="/login" onclick={closeMenus}>
                             Login / Register
                         </a>
+                    {/if}
+
+                    <!-- Always visible -->
+                    <a href="/admin/login" onclick={closeMenus}>
+                        Admin Dashboard
+                    </a>
+
+                    {#if loggedIn}
+                        <button type="button" onclick={handleLogout}>
+                            Logout
+                        </button>
                     {/if}
                 </nav>
             {/if}
@@ -383,13 +390,6 @@
                             >
                                 My Profile
                             </a>
-
-                            <button
-                                type="button"
-                                onclick={handleLogout}
-                            >
-                                Logout
-                            </button>
                         {:else}
                             <a
                                 href="/login"
@@ -397,6 +397,23 @@
                             >
                                 Login / Register
                             </a>
+                        {/if}
+
+                        <!-- Always visible -->
+                        <a
+                            href="/admin/login"
+                            onclick={closeMenus}
+                        >
+                            Admin Dashboard
+                        </a>
+
+                        {#if loggedIn}
+                            <button
+                                type="button"
+                                onclick={handleLogout}
+                            >
+                                Logout
+                            </button>
                         {/if}
                     </nav>
                 {/if}

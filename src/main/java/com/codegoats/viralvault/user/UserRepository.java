@@ -95,6 +95,36 @@ public class UserRepository {
     }
 
 
+    public Optional<User> findByUsername(String username) {
+
+        String sql = """
+            SELECT user_id, username, full_name, email,
+                phone_number, password_hash, is_admin
+            FROM users
+            WHERE username = ?
+            """;
+
+        List<User> users = jdbcTemplate.query(
+            sql,
+            (rs, rowNum) -> {
+                User user = new User();
+
+                user.setId(rs.getLong("user_id"));
+                user.setUsername(rs.getString("username"));
+                user.setFullName(rs.getString("full_name"));
+                user.setEmail(rs.getString("email"));
+                user.setPhoneNumber(rs.getString("phone_number"));
+                user.setPasswordHash(rs.getString("password_hash"));
+                user.setAdmin(rs.getBoolean("is_admin"));
+
+                return user;
+            },
+            username
+        );
+
+        return users.stream().findFirst();
+    }
+
     public Optional<User> findById(Long userId) {
         String sql = """
             SELECT user_id, username, full_name, email,
