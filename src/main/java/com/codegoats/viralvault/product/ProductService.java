@@ -5,6 +5,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Comparator;
 import java.util.List;
+import java.util.Locale;
 
 @Service
 public class ProductService {
@@ -23,32 +24,82 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
-    public Product updateProduct(Long id, Product product) {
+    private void validateProduct(Product product) {
+
         if (product.getName() == null ||
             product.getName().isBlank()) {
+
             throw new IllegalArgumentException(
                 "Product name is required."
             );
         }
 
-        if (!Double.isFinite(product.getPrice()) ||
-            product.getPrice() < 0) {
+        if (product.getName().trim().length() > 100) {
+
             throw new IllegalArgumentException(
-                "Product price cannot be negative or invalid."
+                "Product name cannot exceed 100 characters."
+            );
+        }
+
+        if (product.getCategory() == null ||
+            product.getCategory().isBlank()) {
+
+            throw new IllegalArgumentException(
+                "Product category is required."
+            );
+        }
+
+        if (product.getCategory().trim().length() > 50) {
+
+            throw new IllegalArgumentException(
+                "Category cannot exceed 50 characters."
+            );
+        }
+
+        if (!Double.isFinite(product.getPrice()) ||
+            product.getPrice() < 0 ||
+            product.getPrice() > 99999999.99) {
+
+            throw new IllegalArgumentException(
+                "Please enter a valid product price."
             );
         }
 
         if (product.getQuantity() < 0) {
+
             throw new IllegalArgumentException(
                 "Product quantity cannot be negative."
             );
         }
 
-        product.setName(product.getName().trim());
+        if (product.getImageUrl() != null &&
+            product.getImageUrl().length() > 255) {
 
-        boolean updated = productRepository.updateProduct(
-            id, product
+            throw new IllegalArgumentException(
+                "Image URL cannot exceed 255 characters."
+            );
+        }
+
+        product.setName(product.getName().trim());
+        product.setCategory(product.getCategory().trim());
+
+        product.setPrice(
+            Math.round(product.getPrice() * 100.0) / 100.0
         );
+    }
+
+    public void addProduct(Product product) {
+
+        validateProduct(product);
+        productRepository.addProduct(product);
+    }
+
+    public Product updateProduct(Long id, Product product) {
+
+        validateProduct(product);
+
+        boolean updated =
+            productRepository.updateProduct(id, product);
 
         if (!updated) {
             return null;
@@ -57,45 +108,60 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
-    public void addProduct(Product product) {
-        throw new UnsupportedOperationException(
-            "Adding products to SQLite is not implemented yet."
-        );
-    }
-
     public boolean removeProduct(Long id) {
-        throw new UnsupportedOperationException(
-            "Removing products from SQLite is not implemented yet."
-        );
+
+        return productRepository.deleteProduct(id);
     }
 
     public List<Product> searchProducts(String searchTerm) {
-        String term = searchTerm.toLowerCase();
+
+        String term = searchTerm == null
+            ? ""
+            : searchTerm.toLowerCase(Locale.ROOT);
 
         return getAllProducts().stream()
             .filter(product ->
-                product.getName().toLowerCase().contains(term) ||
+                product.getName()
+                    .toLowerCase(Locale.ROOT).contains(term) ||
+
+                (product.getCategory() != null &&
+                 product.getCategory()
+                    .toLowerCase(Locale.ROOT).contains(term)) ||
+
                 (product.getDescription() != null &&
-                 product.getDescription().toLowerCase().contains(term))
+                 product.getDescription()
+                    .toLowerCase(Locale.ROOT).contains(term))
             )
             .toList();
     }
 
     public List<Product> sortByPriceLowToHigh() {
+
         return getAllProducts().stream()
-            .sorted(Comparator.comparingDouble(Product::getPrice))
+            .sorted(
+                Comparator.comparingDouble(Product::getPrice)
+            )
             .toList();
     }
 
     public List<Product> sortByPriceHighToLow() {
+
         return getAllProducts().stream()
-            .sorted(Comparator.comparingDouble(Product::getPrice).reversed())
+            .sorted(
+                Comparator.comparingDouble(Product::getPrice)
+                    .reversed()
+            )
             .toList();
     }
 
     public List<Product> sortByAvailability() {
+
         return getAllProducts().stream()
-            .sorted(Comparator.comparingInt(Product::getQuantity).reversed())
+            .sorted(
+                Comparator.comparingInt(Product::getQuantity)
+                    .reversed()
+            )
             .toList();
     }
 }
+

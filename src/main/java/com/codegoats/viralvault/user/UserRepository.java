@@ -202,4 +202,51 @@ public class UserRepository {
         );
     }
 
+        // Retrieve all registered users for administrator management.
+    public List<User> findAll() {
+
+        String sql = """
+            SELECT user_id, username, full_name,
+                   email, is_admin
+            FROM users
+            ORDER BY user_id ASC
+            """;
+
+        return jdbcTemplate.query(sql, (rs, rowNum) -> {
+            User user = new User();
+
+            user.setId(rs.getLong("user_id"));
+            user.setUsername(rs.getString("username"));
+            user.setFullName(rs.getString("full_name"));
+            user.setEmail(rs.getString("email"));
+            user.setAdmin(rs.getBoolean("is_admin"));
+
+            return user;
+        });
+    }
+
+    // Update only the fields provided by an administrator.
+    public int updateUserByAdmin(
+            Long userId,
+            String fullName,
+            String email,
+            String passwordHash) {
+
+        String sql = """
+            UPDATE users
+            SET full_name = COALESCE(?, full_name),
+                email = COALESCE(?, email),
+                password_hash = COALESCE(?, password_hash)
+            WHERE user_id = ?
+              AND COALESCE(is_admin, 0) = 0
+            """;
+
+        return jdbcTemplate.update(
+            sql,
+            fullName,
+            email,
+            passwordHash,
+            userId
+        );
+    }
 }

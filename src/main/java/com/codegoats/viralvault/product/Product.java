@@ -1,17 +1,30 @@
+
 package com.codegoats.viralvault.product;
 
 public class Product {
 
     private Long id;
     private String name;
+    private String category;
     private String description;
     private double price;
     private int quantity;
     private String imageUrl;
 
-    public Product(Long id, String name, String description, double price, int quantity, String imageUrl) {
+    public Product(Long id, String name, String description,
+                   double price, int quantity, String imageUrl) {
+
+        this(id, name, "Collectibles", description,
+             price, quantity, imageUrl);
+    }
+
+    public Product(Long id, String name, String category,
+                   String description, double price,
+                   int quantity, String imageUrl) {
+
         this.id = id;
         this.name = name;
+        this.category = category;
         this.description = description;
         this.price = price;
         this.quantity = quantity;
@@ -32,6 +45,14 @@ public class Product {
 
     public void setName(String name) {
         this.name = name;
+    }
+
+    public String getCategory() {
+        return category;
+    }
+
+    public void setCategory(String category) {
+        this.category = category;
     }
 
     public String getDescription() {

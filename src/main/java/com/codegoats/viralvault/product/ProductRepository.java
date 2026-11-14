@@ -2,6 +2,7 @@
 package com.codegoats.viralvault.product;
 
 import org.springframework.jdbc.core.JdbcTemplate;
+import org.springframework.jdbc.core.RowMapper;
 import org.springframework.stereotype.Repository;
 
 import java.util.List;
@@ -15,54 +16,70 @@ public class ProductRepository {
         this.jdbcTemplate = jdbcTemplate;
     }
 
+    private final RowMapper<Product> productMapper =
+        (rs, rowNum) -> new Product(
+            rs.getLong("product_id"),
+            rs.getString("name"),
+            rs.getString("category"),
+            rs.getString("description"),
+            rs.getDouble("price"),
+            rs.getInt("quantity"),
+            rs.getString("image_url")
+        );
+
     public List<Product> findAll() {
+
         String sql = """
-            SELECT product_id, name, description, price,
-                   quantity, image_url
+            SELECT product_id, name, category, description,
+                   price, quantity, image_url
             FROM products
             ORDER BY product_id
             """;
 
-        return jdbcTemplate.query(sql, (rs, rowNum) ->
-            new Product(
-                rs.getLong("product_id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getDouble("price"),
-                rs.getInt("quantity"),
-                rs.getString("image_url")
-            )
-        );
+        return jdbcTemplate.query(sql, productMapper);
     }
 
     public Product findById(Long id) {
+
         String sql = """
-            SELECT product_id, name, description, price,
-                   quantity, image_url
+            SELECT product_id, name, category, description,
+                   price, quantity, image_url
             FROM products
             WHERE product_id = ?
             """;
 
-        List<Product> results = jdbcTemplate.query(
-            sql,
-            (rs, rowNum) -> new Product(
-                rs.getLong("product_id"),
-                rs.getString("name"),
-                rs.getString("description"),
-                rs.getDouble("price"),
-                rs.getInt("quantity"),
-                rs.getString("image_url")
-            ),
-            id
-        );
+        List<Product> results =
+            jdbcTemplate.query(sql, productMapper, id);
 
         return results.isEmpty() ? null : results.get(0);
     }
 
+    public void addProduct(Product product) {
+
+        String sql = """
+            INSERT INTO products
+                (name, category, description,
+                 price, quantity, image_url)
+            VALUES (?, ?, ?, ?, ?, ?)
+            """;
+
+        jdbcTemplate.update(
+            sql,
+            product.getName(),
+            product.getCategory(),
+            product.getDescription(),
+            product.getPrice(),
+            product.getQuantity(),
+            product.getImageUrl()
+        );
+    }
+
     public boolean updateProduct(Long id, Product product) {
+
         String sql = """
             UPDATE products
             SET name = ?,
+                category = ?,
                 description = ?,
                 price = ?,
                 quantity = ?,
@@ -73,6 +90,7 @@ public class ProductRepository {
         int rowsUpdated = jdbcTemplate.update(
             sql,
             product.getName(),
+            product.getCategory(),
             product.getDescription(),
             product.getPrice(),
             product.getQuantity(),
@@ -81,5 +99,23 @@ public class ProductRepository {
         );
 
         return rowsUpdated > 0;
+    }
+
+    public boolean deleteProduct(Long id) {
+
+        String sql = """
+            DELETE FROM products
+            WHERE product_id = ?
+              AND NOT EXISTS (
+                  SELECT 1 FROM order_items
+                  WHERE product_id = ?
+              )
+              AND NOT EXISTS (
+                  SELECT 1 FROM cart_items
+                  WHERE product_id = ?
+              )
+            """;
+
+        return jdbcTemplate.update(sql, id, id, id) > 0;
     }
 }
