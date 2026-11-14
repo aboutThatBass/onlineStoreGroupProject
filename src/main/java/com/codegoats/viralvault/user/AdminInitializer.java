@@ -20,6 +20,9 @@ public class AdminInitializer implements ApplicationRunner {
     @Value("${VIRALVAULT_ADMIN_PASSWORD:}")
     private String adminPassword;
 
+    @Value("${VIRALVAULT_LOCAL_DEV:true}")
+    private boolean localDevelopment;
+
     public AdminInitializer(
             JdbcTemplate jdbcTemplate,
             UserRepository userRepository,
@@ -33,6 +36,28 @@ public class AdminInitializer implements ApplicationRunner {
     @Override
     public void run(ApplicationArguments args) {
 
+        // Use the shared password only during local development.
+        if (adminPassword == null || adminPassword.isBlank()) {
+
+            if (localDevelopment) {
+                adminPassword = "ViralAdmin123";
+            } else {
+                System.out.println(
+                    "[Viral Vault] Admin password not configured."
+                );
+                return;
+            }
+        }
+
+        if (adminPassword.getBytes(
+                java.nio.charset.StandardCharsets.UTF_8
+            ).length > 72) {
+
+            throw new IllegalStateException(
+                "Admin password cannot exceed 72 UTF-8 bytes."
+            );
+        }
+
         // Check whether the administrator already exists.
         var existingUser =
                 userRepository.findByUsername(ADMIN_USERNAME);
@@ -43,9 +68,35 @@ public class AdminInitializer implements ApplicationRunner {
                     && ADMIN_EMAIL.equals(
                         existingUser.get().getEmail())) {
 
-                System.out.println(
-                    "[Viral Vault] Administrator account already exists."
-                );
+                // Standardize the password for local development.
+                if (localDevelopment) {
+
+                    String passwordHash =
+                            passwordService.hashPassword(adminPassword);
+
+                    jdbcTemplate.update(
+                        """
+                        UPDATE users
+                        SET password_hash = ?
+                        WHERE username = ?
+                        AND email = ?
+                        AND is_admin = 1
+                        """,
+                        passwordHash,
+                        ADMIN_USERNAME,
+                        ADMIN_EMAIL
+                    );
+
+                    System.out.println(
+                        "[Viral Vault] Local administrator account is ready."
+                    );
+
+                } else {
+
+                    System.out.println(
+                        "[Viral Vault] Administrator account already exists."
+                    );
+                }
 
             } else {
 
@@ -55,25 +106,6 @@ public class AdminInitializer implements ApplicationRunner {
             }
 
             return;
-        }
-
-        // Do not create an account without a configured password.
-        if (adminPassword == null || adminPassword.isBlank()) {
-
-            System.out.println(
-                "[Viral Vault] Admin password not configured."
-            );
-
-            return;
-        }
-
-        if (adminPassword.getBytes(
-                java.nio.charset.StandardCharsets.UTF_8
-            ).length > 72) {
-
-            throw new IllegalStateException(
-                "Admin password cannot exceed 72 UTF-8 bytes."
-            );
         }
 
         // Prevent conflicts with existing accounts.
