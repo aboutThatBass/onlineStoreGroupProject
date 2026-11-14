@@ -23,6 +23,40 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
+    public Product updateProduct(Long id, Product product) {
+        if (product.getName() == null ||
+            product.getName().isBlank()) {
+            throw new IllegalArgumentException(
+                "Product name is required."
+            );
+        }
+
+        if (!Double.isFinite(product.getPrice()) ||
+            product.getPrice() < 0) {
+            throw new IllegalArgumentException(
+                "Product price cannot be negative or invalid."
+            );
+        }
+
+        if (product.getQuantity() < 0) {
+            throw new IllegalArgumentException(
+                "Product quantity cannot be negative."
+            );
+        }
+
+        product.setName(product.getName().trim());
+
+        boolean updated = productRepository.updateProduct(
+            id, product
+        );
+
+        if (!updated) {
+            return null;
+        }
+
+        return productRepository.findById(id);
+    }
+
     public void addProduct(Product product) {
         throw new UnsupportedOperationException(
             "Adding products to SQLite is not implemented yet."
@@ -37,6 +71,7 @@ public class ProductService {
 
     public List<Product> searchProducts(String searchTerm) {
         String term = searchTerm.toLowerCase();
+
         return getAllProducts().stream()
             .filter(product ->
                 product.getName().toLowerCase().contains(term) ||

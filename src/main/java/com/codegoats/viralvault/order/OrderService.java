@@ -199,4 +199,96 @@ public class OrderService {
 
         return result;
     }
+
+    // ADMIN ORDER MANAGEMENT
+
+    // Convert database results into the frontend format.
+    private Map<String, Object> formatAdminOrder(
+            Map<String, Object> order) {
+
+        Map<String, Object> result = new LinkedHashMap<>();
+
+        String customer = order.get("full_name") == null
+                ? ""
+                : order.get("full_name").toString();
+
+        if (customer.isBlank()) {
+            customer = order.get("username").toString();
+        }
+
+        String status = order.get("status") == null
+                ? "Pending"
+                : order.get("status").toString();
+
+        result.put("orderId", order.get("order_id"));
+        result.put("userId", order.get("user_id"));
+        result.put("customer", customer);
+        result.put("email", order.get("email"));
+        result.put("orderDate", order.get("order_date"));
+        result.put("totalAmount", order.get("total_amount"));
+        result.put("status", status);
+
+        result.put(
+            "fulfilled",
+            status.equalsIgnoreCase("Fulfilled")
+        );
+
+        return result;
+    }
+
+    // Retrieve all customer orders.
+    public List<Map<String, Object>> getAllOrders() {
+
+        List<Map<String, Object>> results = new ArrayList<>();
+
+        for (Map<String, Object> order :
+                orderRepository.findAllOrders()) {
+
+            results.add(formatAdminOrder(order));
+        }
+
+        return results;
+    }
+
+    // Retrieve details and purchased items for an order.
+    public Map<String, Object> getOrderDetails(Long orderId) {
+
+        Map<String, Object> order =
+                orderRepository.findOrderById(orderId);
+
+        if (order == null) {
+            return null;
+        }
+
+        Map<String, Object> result =
+                formatAdminOrder(order);
+
+        result.put(
+            "items",
+            orderRepository.findAdminOrderItems(orderId)
+        );
+
+        return result;
+    }
+
+    // Update the fulfillment status of an order.
+    @Transactional
+    public Map<String, Object> updateFulfillment(
+            Long orderId, boolean fulfilled) {
+
+        String status = fulfilled
+                ? "Fulfilled"
+                : "Pending";
+
+        boolean updated =
+                orderRepository.updateOrderStatus(
+                    orderId, status
+                );
+
+        if (!updated) {
+            return null;
+        }
+
+        return getOrderDetails(orderId);
+    }
 }

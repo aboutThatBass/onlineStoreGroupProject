@@ -58,4 +58,28 @@ public class ProductRepository {
 
         return results.isEmpty() ? null : results.get(0);
     }
+
+    public boolean updateProduct(Long id, Product product) {
+        String sql = """
+            UPDATE products
+            SET name = ?,
+                description = ?,
+                price = ?,
+                quantity = ?,
+                image_url = ?
+            WHERE product_id = ?
+            """;
+
+        int rowsUpdated = jdbcTemplate.update(
+            sql,
+            product.getName(),
+            product.getDescription(),
+            product.getPrice(),
+            product.getQuantity(),
+            product.getImageUrl(),
+            id
+        );
+
+        return rowsUpdated > 0;
+    }
 }

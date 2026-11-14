@@ -145,4 +145,87 @@ public class OrderRepository {
             userId
         );
     }
+
+    // ADMIN ORDER MANAGEMENT
+
+    // Retrieve all customer orders.
+    public List<Map<String, Object>> findAllOrders() {
+        String sql = """
+            SELECT
+                o.order_id,
+                o.user_id,
+                u.username,
+                u.full_name,
+                u.email,
+                o.total_amount,
+                o.order_date,
+                o.status
+            FROM orders o
+            JOIN users u ON o.user_id = u.user_id
+            ORDER BY o.order_date DESC, o.order_id DESC
+            """;
+
+        return jdbcTemplate.queryForList(sql);
+    }
+
+    // Retrieve an individual order.
+    public Map<String, Object> findOrderById(Long orderId) {
+        String sql = """
+            SELECT
+                o.order_id,
+                o.user_id,
+                u.username,
+                u.full_name,
+                u.email,
+                o.total_amount,
+                o.order_date,
+                o.status
+            FROM orders o
+            JOIN users u ON o.user_id = u.user_id
+            WHERE o.order_id = ?
+            """;
+
+        List<Map<String, Object>> results =
+                jdbcTemplate.queryForList(sql, orderId);
+
+        return results.isEmpty() ? null : results.get(0);
+    }
+
+    // Retrieve the purchased items within an order.
+    public List<Map<String, Object>> findAdminOrderItems(
+            Long orderId) {
+
+        String sql = """
+            SELECT
+                oi.product_id,
+                p.name AS product_name,
+                p.image_url,
+                oi.quantity,
+                oi.price_at_purchase
+            FROM order_items oi
+            LEFT JOIN products p
+                ON oi.product_id = p.product_id
+            WHERE oi.order_id = ?
+            ORDER BY oi.order_item_id
+            """;
+
+        return jdbcTemplate.queryForList(sql, orderId);
+    }
+
+    // Update the fulfillment status of an order.
+    public boolean updateOrderStatus(
+            Long orderId, String status) {
+
+        int updated = jdbcTemplate.update(
+            """
+            UPDATE orders
+            SET status = ?
+            WHERE order_id = ?
+            """,
+            status,
+            orderId
+        );
+
+        return updated > 0;
+    }
 }
