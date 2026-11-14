@@ -6,6 +6,7 @@
     import type { LayoutProps } from './$types';
     import Header from '../lib/components/Header.svelte';
     import { cart } from '../lib/stores/cart.svelte';
+    import { page } from '$app/state';
 
     let { children }: LayoutProps = $props();
 
@@ -18,6 +19,8 @@
     <link rel="icon" href={favicon} />
 </svelte:head>
 
-<Header />
+{#if !page.url.pathname.startsWith('/admin')}
+    <Header />
+{/if}
 
 {@render children()}
