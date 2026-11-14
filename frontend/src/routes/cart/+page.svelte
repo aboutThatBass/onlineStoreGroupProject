@@ -1,8 +1,8 @@
 
 <script lang="ts">
     import { cart } from '../../lib/stores/cart.svelte';
-
     import { calculatePricing } from '../../lib/data/pricing';
+    import { ArrowLeft } from '@lucide/svelte';
 
     let pricing = $derived(calculatePricing(cart.subtotal));
 
@@ -33,8 +33,10 @@
         <div class="empty-cart">
             <h2>Your cart is empty</h2>
             <p>Looks like you haven't added anything yet.</p>
+
             <a href="/" class="continue-shopping">
-                Continue Shopping
+                <ArrowLeft size={20} strokeWidth={2.2} />
+                <span>Continue Shopping</span>
             </a>
         </div>
     {:else}
@@ -121,7 +123,8 @@
                 </a>
 
                 <a href="/" class="back-to-shop">
-                    Continue Shopping
+                    <ArrowLeft size={19} strokeWidth={2.2} />
+                    <span>Continue Shopping</span>
                 </a>
             </aside>
         </div>
@@ -234,20 +237,79 @@
         text-decoration: none;
     }
 
+    /* Continue Shopping buttons */
+
+    .continue-shopping,
     .back-to-shop {
-        display: block;
+        display: inline-flex;
+        align-items: center;
+        justify-content: center;
+        gap: 0.6rem;
+
+        padding: 0.9rem 1.6rem;
+
+        background-color: #fffdf7;
+        border: 2px solid var(--color-border);
+        border-radius: 12px;
+        box-shadow: 4px 4px 0 var(--color-border);
+
+        color: var(--color-text);
+        font-family: var(--font-heading, 'Fredoka', sans-serif);
+        font-size: 1.1rem;
+        font-weight: 600;
         text-align: center;
+        text-decoration: none;
+
+        cursor: pointer;
+
+        transition:
+            background-color 0.2s ease,
+            transform 0.2s ease,
+            box-shadow 0.2s ease;
+    }
+
+    .continue-shopping:hover,
+    .back-to-shop:hover {
+        background-color: #fff0e8;
+        transform: translateY(-2px);
+        box-shadow: 4px 6px 0 var(--color-border);
+    }
+
+    .continue-shopping:active,
+    .back-to-shop:active {
+        transform: translateY(2px);
+        box-shadow: 1px 1px 0 var(--color-border);
+    }
+
+    .continue-shopping:focus-visible,
+    .back-to-shop:focus-visible {
+        outline: 3px solid var(--color-border);
+        outline-offset: 4px;
+    }
+
+    .continue-shopping {
+        margin-top: 1.5rem;
+    }
+
+    .back-to-shop {
+        display: flex;
+        width: 100%;
         margin-top: 1rem;
     }
+
+    /* Empty cart */
 
     .empty-cart {
         text-align: center;
         padding: 4rem 1rem;
     }
 
-    .continue-shopping {
-        display: inline-block;
-        margin-top: 1rem;
+    .empty-cart h2 {
+        margin-bottom: 1rem;
+    }
+
+    .empty-cart p {
+        margin-bottom: 0.5rem;
     }
 
     .error {

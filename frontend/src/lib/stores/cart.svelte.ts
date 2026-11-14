@@ -15,6 +15,14 @@ class CartStore {
 
     hasItems = $derived(this.items.length > 0);
 
+    // Total quantity of all products in the cart
+    itemCount = $derived(
+        this.items.reduce(
+            (total, item) => total + item.quantity,
+            0
+        )
+    );
+
     subtotal = $derived(
         this.items.reduce(
             (total, item) =>

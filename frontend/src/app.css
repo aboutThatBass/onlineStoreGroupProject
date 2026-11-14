@@ -1,4 +1,6 @@
 
+@import url('https://fonts.googleapis.com/css2?family=Fredoka:wght@400;500;600;700&family=Nunito:wght@400;500;600;700;800;900&display=swap');
+
 :root {
     /* Viral Vault retro color palette */
     --color-background: #ffedad;
@@ -13,7 +15,11 @@
     --border-radius: 12px;
     --card-shadow: 4px 4px 0 var(--color-border);
 
-    font-family: Arial, sans-serif;
+    /* Viral Vault typography */
+    --font-heading: 'Fredoka', sans-serif;
+    --font-body: 'Nunito', sans-serif;
+
+    font-family: var(--font-body);
     color: var(--color-text);
     background-color: var(--color-background);
 }
@@ -25,8 +31,47 @@
 body {
     margin: 0;
     min-height: 100vh;
+    font-family: var(--font-body);
 }
 
-button, input, select {
-    font: inherit;
+/* Headings */
+h1,
+h2,
+h3,
+h4,
+h5,
+h6 {
+    font-family: var(--font-heading);
+    font-weight: 600;
+    letter-spacing: 0.01em;
+}
+
+/* Buttons, navigation and labels */
+button,
+nav,
+label,
+select {
+    font-family: var(--font-heading);
+}
+
+/* Inputs and general text */
+input,
+textarea {
+    font-family: var(--font-body);
+}
+
+/* Preserve inherited font sizing and colors */
+button,
+input,
+select,
+textarea {
+    font-size: inherit;
+    color: inherit;
+}
+
+/* Product names and prices */
+.price,
+.product-price,
+.suggestion-price {
+    font-family: var(--font-heading);
 }
