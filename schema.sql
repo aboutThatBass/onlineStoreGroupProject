@@ -1,9 +1,10 @@
--- reset
+	-- reset
 DROP TABLE IF EXISTS cart_items;
 DROP TABLE IF EXISTS order_items;
 DROP TABLE IF EXISTS orders;
 DROP TABLE IF EXISTS products;
 DROP TABLE IF EXISTS users;
+DROP TABLE IF EXISTS discounts;
 
 -- users
 CREATE TABLE users (
@@ -29,11 +30,26 @@ CREATE TABLE products (
     category VARCHAR(50) NOT NULL,
     description TEXT,
     price DECIMAL(10, 2) NOT NULL,
+	sale_price DECIMAL(10, 2),
     quantity INTEGER NOT NULL DEFAULT 0, 
     image_url VARCHAR(255),
     is_on_sale BOOLEAN DEFAULT 0,
     created_at DATETIME DEFAULT CURRENT_TIMESTAMP
 );
+
+-- discount codes table
+CREATE TABLE discounts (
+    discount_id INTEGER PRIMARY KEY AUTOINCREMENT,
+    code VARCHAR(50) NOT NULL UNIQUE,
+    discount_percent DECIMAL(5, 2) NOT NULL,
+    is_active BOOLEAN NOT NULL DEFAULT 1,
+    created_at DATETIME DEFAULT CURRENT_TIMESTAMP
+);
+
+-- some discounts
+INSERT INTO discounts (code, discount_percent, is_active)
+VALUES ('WELCOME10', 10.00, 1),
+       ('VIP20', 20.00, 1);
 
 -- orders table
 CREATE TABLE orders (
