@@ -82,14 +82,16 @@
         }
     }
 
-    function handleSearchFocusOut(event: FocusEvent) {
+    async function handleSearchFocusOut(event: FocusEvent) {
         const container = event.currentTarget as HTMLElement;
-        const next = event.relatedTarget as Node | null;
 
-        if (!next || !container.contains(next)) {
+        await tick();
+
+        if (!container.contains(document.activeElement)) {
             searchOpen = false;
         }
     }
+
 
     function updateSearch(value: string) {
         headerSearch = value;
@@ -290,7 +292,6 @@
         >
             <div
                 class="search-container"
-                onfocusout={handleSearchFocusOut}
             >
                 <button
                     type="button"
