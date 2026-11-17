@@ -1,7 +1,7 @@
 
 import { getCart } from './cart';
 import type { OrderSnapshot } from '../types/OrderSnapshot';
-import { calculatePricing } from './pricing';
+import { normalizeDiscountCode } from './pricing';
 
 export type CheckoutDetails = {
     firstName: string;
@@ -55,20 +55,7 @@ export async function submitOrder(
         );
     }
 
-    const subtotal = items.reduce(
-        (sum, item) =>
-            sum + item.product.price * item.quantity,
-        0
-    );
-
-    const pricing = calculatePricing(
-        subtotal,
-        discountCode
-    );
-
-    if (!pricing.validDiscount) {
-        throw new Error('Invalid discount code.');
-    }
+    const normalizedCode = normalizeDiscountCode(discountCode);
 
     const response = await fetch(`${API}/orders`, {
         method: 'POST',
@@ -77,7 +64,7 @@ export async function submitOrder(
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            discountCode: pricing.discountCode,
+            discountCode: normalizedCode,
             customer
         })
     });

@@ -1,11 +1,14 @@
-
 export const TAX_RATE = 0.0825;
 
-export const DISCOUNT_CODES = {
-    LABUB00: { type: 'percent', value: 0.10 },
-    '0HIO123': { type: 'percent', value: 0.20 },
-    TUNGTUNG22: { type: 'fixed', value: 5.00 }
-} as const;
+const API = 'http://localhost:8080/api/discounts';
+
+export type DiscountRule = {
+    valid: boolean;
+    code: string;
+    discountType: 'percent' | 'fixed';
+    discountPercent: number;
+    fixedAmount: number;
+};
 
 export type PricingResult = {
     subtotal: number;
@@ -25,31 +28,68 @@ export function normalizeDiscountCode(code: string): string {
     return code.trim().toUpperCase();
 }
 
+export async function validateDiscountCode(
+    code: string
+): Promise<DiscountRule | null> {
+    const normalized = normalizeDiscountCode(code);
+
+    if (!normalized) {
+        return null;
+    }
+
+    const response = await fetch(
+        `${API}/validate?code=${encodeURIComponent(normalized)}`,
+        {
+            credentials: 'include',
+            cache: 'no-store'
+        }
+    );
+
+    if (response.status === 400) {
+        throw new Error('Invalid or inactive discount code.');
+    }
+
+    if (!response.ok) {
+        throw new Error('Unable to validate discount code.');
+    }
+
+    const rule: DiscountRule = await response.json();
+
+    if (!rule.valid) {
+        throw new Error('Invalid or inactive discount code.');
+    }
+
+    return rule;
+}
+
 export function calculatePricing(
     subtotal: number,
-    code: string = ''
+    rule: DiscountRule | string | null = null
 ): PricingResult {
-    const normalizedCode = normalizeDiscountCode(code);
     const safeSubtotal = roundMoney(Math.max(0, subtotal));
 
     const discountRule =
-        DISCOUNT_CODES[
-            normalizedCode as keyof typeof DISCOUNT_CODES
-        ];
+        typeof rule === 'object' && rule?.valid ? rule : null;
 
     let discount = 0;
 
     if (discountRule) {
-        if (discountRule.type === 'percent') {
-            discount = safeSubtotal * discountRule.value;
+        if (discountRule.discountType === 'percent') {
+            discount =
+                safeSubtotal * discountRule.discountPercent / 100;
         } else {
-            discount = discountRule.value;
+            discount = discountRule.fixedAmount;
         }
     }
 
-    discount = roundMoney(Math.min(discount, safeSubtotal));
+    discount = roundMoney(
+        Math.min(Math.max(0, discount), safeSubtotal)
+    );
 
-    const taxableSubtotal = roundMoney(safeSubtotal - discount);
+    const taxableSubtotal = roundMoney(
+        safeSubtotal - discount
+    );
+
     const tax = roundMoney(taxableSubtotal * TAX_RATE);
     const total = roundMoney(taxableSubtotal + tax);
 
@@ -59,7 +99,10 @@ export function calculatePricing(
         taxableSubtotal,
         tax,
         total,
-        discountCode: discountRule ? normalizedCode : '',
-        validDiscount: normalizedCode === '' || Boolean(discountRule)
+        discountCode: discountRule?.code ?? '',
+        validDiscount:
+            Boolean(discountRule) ||
+            rule === null ||
+            rule === ''
     };
 }
