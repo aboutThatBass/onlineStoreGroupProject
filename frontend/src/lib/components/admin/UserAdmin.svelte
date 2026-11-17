@@ -1,18 +1,34 @@
 
-<script>
+<script lang="ts">
+    type User = {
+        id: number;
+        username: string;
+        fullName: string | null;
+        email: string;
+        admin: boolean;
+    };
+
+    type SortField =
+        'id' | 'username' | 'fullName' | 'email' | 'role';
+
+    type UserUpdate = {
+        fullName?: string;
+        email?: string;
+        password?: string;
+    };
     import { onMount } from 'svelte';
 
     const API = 'http://localhost:8080/api/users';
 
-    let users = $state([]);
+    let users = $state<User[]>([]);
     let loading = $state(true);
     let saving = $state(false);
 
     let searchQuery = $state('');
-    let sortBy = $state('id');
+    let sortBy = $state<SortField>('id');
     let sortDirection = $state('asc');
 
-    let selectedUser = $state(null);
+    let selectedUser = $state<User | null>(null);
 
     let fullName = $state('');
     let email = $state('');
@@ -22,7 +38,7 @@
     let successMessage = $state('');
     let errorMessage = $state('');
 
-    async function getError(response) {
+    async function getError(response: Response) {
         const data = await response.json().catch(() => null);
 
         return data?.message ||
@@ -45,7 +61,7 @@
             users = await response.json();
 
         } catch (error) {
-            errorMessage = error.message;
+            errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
         } finally {
             loading = false;
         }
@@ -55,7 +71,7 @@
         loadUsers();
     });
 
-    function editUser(user) {
+    function editUser(user: User) {
 
         if (user.admin || saving) return;
 
@@ -114,7 +130,7 @@
 
     let filteredUsers = $derived(getFilteredUsers());
 
-    async function saveUser(event) {
+    async function saveUser(event: SubmitEvent) {
         event.preventDefault();
 
         if (!selectedUser || saving) return;
@@ -132,7 +148,7 @@
             return;
         }
 
-        const body = {};
+        const body: UserUpdate = {};
 
         if (fullName.trim() !== (selectedUser.fullName || '')) {
             body.fullName = fullName.trim();
@@ -172,7 +188,7 @@
                 throw new Error(await getError(response));
             }
 
-            const updatedUser = await response.json();
+            const updatedUser: User = await response.json();
 
             users = users.map(user =>
                 user.id === updatedUser.id
@@ -185,7 +201,7 @@
             successMessage = 'User updated successfully.';
 
         } catch (error) {
-            errorMessage = error.message;
+            errorMessage = error instanceof Error ? error.message : "An unexpected error occurred.";
         } finally {
             saving = false;
         }

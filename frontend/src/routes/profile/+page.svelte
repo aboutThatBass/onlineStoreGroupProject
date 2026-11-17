@@ -124,7 +124,7 @@
 
         await goto(
             tab === 'orders' ? '/profile?tab=orders' : '/profile',
-            { noScroll: true, keepFocus: true }
+            {}
         );
     }
 
