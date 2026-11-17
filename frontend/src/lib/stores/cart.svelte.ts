@@ -1,3 +1,4 @@
+import { effectivePrice } from '../types/Product';
 
 import {
     getCart,
@@ -26,7 +27,7 @@ class CartStore {
     subtotal = $derived(
         this.items.reduce(
             (total, item) =>
-                total + item.product.price * item.quantity,
+                total + effectivePrice(item.product) * item.quantity,
             0
         )
     );

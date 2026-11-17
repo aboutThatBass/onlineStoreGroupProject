@@ -1,5 +1,15 @@
 
 <script lang="ts">
+    import { onMount } from 'svelte';
+    import { effectivePrice, isOnSale } from '../../lib/types/Product';
+
+    onMount(() => {
+        void refreshCart();
+    });
+
+    async function refreshCart() {
+        await cart.load();
+    }
     import { cart } from '../../lib/stores/cart.svelte';
     import { calculatePricing } from '../../lib/data/pricing';
     import { ArrowLeft } from '@lucide/svelte';
@@ -51,7 +61,19 @@
 
                         <div class="item-details">
                             <h2>{item.product.name}</h2>
-                            <p>${item.product.price.toFixed(2)}</p>
+                                                        <p>
+                                {#if isOnSale(item.product)}
+                                    <del class="original-price">
+                                        ${item.product.price.toFixed(2)}
+                                    </del>
+
+                                    <strong class="sale-price">
+                                        ${effectivePrice(item.product).toFixed(2)}
+                                    </strong>
+                                {:else}
+                                    ${item.product.price.toFixed(2)}
+                                {/if}
+                            </p>
 
                             <div class="quantity-controls">
                                 <button
@@ -88,7 +110,7 @@
                         </div>
 
                         <strong class="item-total">
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            ${(effectivePrice(item.product) * item.quantity).toFixed(2)}
                         </strong>
                     </article>
                 {/each}
@@ -132,6 +154,16 @@
 </main>
 
 <style>
+    .original-price {
+        color: #777;
+        margin-right: 0.5rem;
+    }
+
+    .sale-price {
+        color: #a52626;
+        font-weight: 700;
+    }
+
     .cart-page {
         max-width: 1200px;
         margin: 0 auto;

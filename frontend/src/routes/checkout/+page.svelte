@@ -1,5 +1,6 @@
 
 <script lang="ts">
+    import { effectivePrice } from '../../lib/types/Product';
     import OrderReceipt from '../../lib/components/OrderSnapshot.svelte';
     import { Check, ShoppingBag, ArrowRight } from '@lucide/svelte';
     import { cart } from '../../lib/stores/cart.svelte';
@@ -300,7 +301,7 @@
                         </span>
 
                         <strong>
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            ${(effectivePrice(item.product) * item.quantity).toFixed(2)}
                         </strong>
                     </div>
                 {/each}

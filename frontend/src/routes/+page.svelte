@@ -9,7 +9,7 @@
         RotateCcw
     } from '@lucide/svelte';
     import ProductCard from '../lib/components/ProductCard.svelte';
-    import type { Product } from '../lib/types/Product';
+    import { effectivePrice, type Product } from '../lib/types/Product';
 
     let products: Product[] = $state([]);
     let searchQuery = $state('');
@@ -24,7 +24,7 @@
     let priceLimit = $derived(
         Math.max(
             100,
-            ...products.map(product => Math.ceil(product.price))
+            ...products.map(product => Math.ceil(effectivePrice(product)))
         )
     );
 
@@ -63,7 +63,7 @@
 
                 maximumPrice = Math.max(
                     100,
-                    ...products.map(product => Math.ceil(product.price))
+                    ...products.map(product => Math.ceil(effectivePrice(product)))
                 );
             } catch (err) {
                 console.error('Error loading products:', err);
@@ -107,7 +107,7 @@
                     product.quantity <= 0);
 
             const matchesPrice =
-                product.price <= maximumPrice;
+                effectivePrice(product) <= maximumPrice;
 
             return (
                 matchesSearch &&
@@ -118,10 +118,10 @@
 
         switch (sortOption) {
             case 'price-low':
-                return results.sort((a, b) => a.price - b.price);
+                return results.sort((a, b) => effectivePrice(a) - effectivePrice(b));
 
             case 'price-high':
-                return results.sort((a, b) => b.price - a.price);
+                return results.sort((a, b) => effectivePrice(b) - effectivePrice(a));
 
             case 'available':
                 return results.sort((a, b) => {

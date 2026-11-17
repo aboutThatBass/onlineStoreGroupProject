@@ -57,7 +57,7 @@ public class OrderRepository {
             SELECT
                 c.product_id,
                 SUM(c.quantity) AS quantity,
-                p.price,
+                COALESCE(p.sale_price, p.price) AS price,
                 p.quantity AS stock
             FROM cart_items c
             LEFT JOIN products p ON c.product_id = p.product_id
