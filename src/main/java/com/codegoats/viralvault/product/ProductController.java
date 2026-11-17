@@ -1,4 +1,3 @@
-
 package com.codegoats.viralvault.product;
 
 import com.codegoats.viralvault.user.User;
@@ -38,6 +37,7 @@ public class ProductController {
         String category,
         String description,
         Double price,
+        Double salePrice,
         Integer quantity,
         String imageUrl
     ) {}
@@ -125,6 +125,7 @@ public class ProductController {
             body.category(),
             body.description(),
             body.price(),
+            body.salePrice(),
             body.quantity(),
             body.imageUrl()
         );
@@ -193,6 +194,7 @@ public class ProductController {
                 : body.category(),
             body.description(),
             body.price(),
+            existing.getSalePrice(),
             body.quantity(),
             body.imageUrl()
         );
@@ -222,6 +224,46 @@ public class ProductController {
             return ResponseEntity.status(409).body(
                 Map.of("message",
                     "Product conflicts with existing data.")
+            );
+        }
+    }
+
+    public record SaleRequest(Double salePrice) {}
+
+    @PatchMapping("/{id}/sale")
+    public ResponseEntity<?> updateSale(
+            @PathVariable Long id,
+            @RequestBody SaleRequest body,
+            HttpServletRequest request) {
+
+        ResponseEntity<?> denied = checkAdmin(request);
+
+        if (denied != null) {
+            return denied;
+        }
+
+        if (body == null) {
+            return ResponseEntity.badRequest().body(
+                Map.of("message", "Sale request is required.")
+            );
+        }
+
+        try {
+            Product updated = productService.updateSale(
+                id, body.salePrice()
+            );
+
+            if (updated == null) {
+                return ResponseEntity.status(404).body(
+                    Map.of("message", "Product not found.")
+                );
+            }
+
+            return ResponseEntity.ok(updated);
+
+        } catch (IllegalArgumentException e) {
+            return ResponseEntity.badRequest().body(
+                Map.of("message", e.getMessage())
             );
         }
     }

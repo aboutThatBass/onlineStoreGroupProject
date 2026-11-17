@@ -1,4 +1,3 @@
-
 package com.codegoats.viralvault.product;
 
 public class Product {
@@ -8,18 +7,28 @@ public class Product {
     private String category;
     private String description;
     private double price;
+    private Double salePrice;
     private int quantity;
     private String imageUrl;
+    private boolean onSale;
 
     public Product(Long id, String name, String description,
                    double price, int quantity, String imageUrl) {
 
         this(id, name, "Collectibles", description,
-             price, quantity, imageUrl);
+             price, null, quantity, imageUrl);
     }
 
     public Product(Long id, String name, String category,
                    String description, double price,
+                   int quantity, String imageUrl) {
+
+        this(id, name, category, description,
+             price, null, quantity, imageUrl);
+    }
+
+    public Product(Long id, String name, String category,
+                   String description, double price, Double salePrice,
                    int quantity, String imageUrl) {
 
         this.id = id;
@@ -27,8 +36,10 @@ public class Product {
         this.category = category;
         this.description = description;
         this.price = price;
+        this.salePrice = salePrice;
         this.quantity = quantity;
         this.imageUrl = imageUrl;
+        this.onSale = (salePrice != null);
     }
 
     public Long getId() {
@@ -71,6 +82,15 @@ public class Product {
         this.price = price;
     }
 
+    public Double getSalePrice() {
+        return salePrice;
+    }
+
+    public void setSalePrice(Double salePrice) {
+        this.salePrice = salePrice;
+        this.onSale = (salePrice != null);
+    }
+
     public int getQuantity() {
         return quantity;
     }
@@ -85,5 +105,13 @@ public class Product {
 
     public void setImageUrl(String imageUrl) {
         this.imageUrl = imageUrl;
+    }
+
+    public boolean isOnSale() {
+        return onSale;
+    }
+
+    public void setOnSale(boolean onSale) {
+        this.onSale = onSale;
     }
 }
