@@ -87,7 +87,7 @@ public class OrderController {
         return null;
     }
 
-    public record CreateOrderRequest(String discountCode) {
+    public record CreateOrderRequest(String discountCode, CheckoutCustomer customer) {
     }
 
     public record FulfillmentRequest(Boolean fulfilled) {
@@ -129,7 +129,8 @@ public class OrderController {
             Map<String, Object> order =
                     orderService.createOrder(
                         userId,
-                        body.discountCode()
+                        body == null ? null : body.discountCode(),
+                        body == null ? null : body.customer()
                     );
 
             return ResponseEntity

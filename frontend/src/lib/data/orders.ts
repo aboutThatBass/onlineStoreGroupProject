@@ -1,5 +1,6 @@
 
 import { getCart } from './cart';
+import type { OrderSnapshot } from '../types/OrderSnapshot';
 import { calculatePricing } from './pricing';
 
 export type CheckoutDetails = {
@@ -16,6 +17,7 @@ export type OrderConfirmation = {
     orderId: string;
     total: number;
     customer: CheckoutDetails;
+    snapshot: OrderSnapshot;
 };
 
 type SavedOrderResponse = {
@@ -25,6 +27,7 @@ type SavedOrderResponse = {
     tax: number;
     total: number;
     status: string;
+    snapshot: OrderSnapshot;
 };
 
 const API = 'http://localhost:8080/api';
@@ -74,7 +77,8 @@ export async function submitOrder(
             'Content-Type': 'application/json'
         },
         body: JSON.stringify({
-            discountCode: pricing.discountCode
+            discountCode: pricing.discountCode,
+            customer
         })
     });
 
@@ -98,6 +102,7 @@ export async function submitOrder(
     return {
         orderId: String(savedOrder.orderId),
         total: Number(savedOrder.total),
-        customer
+        customer: savedOrder.snapshot,
+        snapshot: savedOrder.snapshot
     };
 }

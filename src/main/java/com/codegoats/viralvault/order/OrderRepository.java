@@ -100,6 +100,30 @@ public class OrderRepository {
         return key.longValue();
     }
 
+    public void saveSnapshot(Long orderId, CheckoutCustomer customer,
+            BigDecimal subtotal, String code, BigDecimal discount,
+            BigDecimal taxRate, BigDecimal tax, BigDecimal total) {
+        jdbcTemplate.update("""
+            INSERT INTO order_snapshots
+                (order_id, first_name, last_name, email, address, city, state, zip_code,
+                 subtotal, discount_code, discount_amount, tax_rate, tax_amount, total_amount)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?, ?)
+            """, orderId, customer.firstName(), customer.lastName(), customer.email(),
+                customer.address(), customer.city(), customer.state(), customer.zipCode(),
+                subtotal, code, discount, taxRate, tax, total);
+    }
+
+    public Map<String, Object> findSnapshot(Long orderId) {
+        List<Map<String, Object>> snapshots = jdbcTemplate.queryForList("""
+            SELECT first_name AS firstName, last_name AS lastName, email, address, city, state,
+                   zip_code AS zipCode, subtotal, discount_code AS discountCode,
+                   discount_amount AS discountAmount, tax_rate AS taxRate,
+                   tax_amount AS taxAmount, total_amount AS total
+            FROM order_snapshots WHERE order_id = ?
+            """, orderId);
+        return snapshots.isEmpty() ? null : snapshots.get(0);
+    }
+
     public void addOrderItem(
             Long orderId,
             Long productId,

@@ -1,6 +1,8 @@
 
 <script lang="ts">
     import { onMount } from 'svelte';
+    import OrderReceipt from '../../lib/components/OrderSnapshot.svelte';
+    import type { OrderSnapshot } from '../../lib/types/OrderSnapshot';
     import { goto } from '$app/navigation';
     import { page } from '$app/state';
     import { UserRound, Package, Search, Pencil } from '@lucide/svelte';
@@ -30,6 +32,7 @@
         orderDate: string;
         status: string;
         items: OrderItem[];
+        snapshot: OrderSnapshot | null;
     };
 
     type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest';
@@ -605,6 +608,8 @@
                                         </div>
                                     {/each}
                                 </div>
+
+                                <OrderReceipt snapshot={order.snapshot} />
 
                                 <div class="order-footer">
                                     <strong>

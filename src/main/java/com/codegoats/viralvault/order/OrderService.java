@@ -39,6 +39,7 @@ public class OrderService {
             result.put("totalAmount", order.get("total_amount"));
             result.put("orderDate", order.get("order_date"));
             result.put("status", order.get("status"));
+            result.put("snapshot", orderRepository.findSnapshot(orderId));
 
             result.put(
                 "items",
@@ -58,7 +59,12 @@ public class OrderService {
     @Transactional
     public Map<String, Object> createOrder(
             Long userId,
-            String discountCode) {
+            String discountCode, CheckoutCustomer customer) {
+
+        if (customer == null) {
+            throw new IllegalArgumentException("Checkout contact and shipping details are required.");
+        }
+        customer = customer.validated();
 
         String code = discountCode == null
                 ? ""
@@ -160,10 +166,11 @@ public class OrderService {
             taxableSubtotal.add(tax)
         );
 
-        Long orderId = orderRepository.createOrder(
-            userId,
-            total
-        );
+        Long orderId = orderRepository.createOrder(userId, total);
+        // Saved in the same transaction as inventory, items, and cart updates.
+        // Monetary values always come from the server, never the request body.
+        orderRepository.saveSnapshot(orderId, customer, subtotal, code, discount,
+                TAX_RATE, tax, total);
 
         for (Map<String, Object> item : cartItems) {
             Long productId =
@@ -196,6 +203,7 @@ public class OrderService {
         result.put("tax", tax);
         result.put("total", total);
         result.put("status", "Pending");
+        result.put("snapshot", orderRepository.findSnapshot(orderId));
 
         return result;
     }
@@ -222,8 +230,12 @@ public class OrderService {
 
         result.put("orderId", order.get("order_id"));
         result.put("userId", order.get("user_id"));
-        result.put("customer", customer);
-        result.put("email", order.get("email"));
+        Map<String, Object> snapshot = orderRepository.findSnapshot(
+                ((Number) order.get("order_id")).longValue());
+        result.put("snapshot", snapshot);
+        result.put("customer", snapshot == null ? customer
+                : snapshot.get("firstName") + " " + snapshot.get("lastName"));
+        result.put("email", snapshot == null ? order.get("email") : snapshot.get("email"));
         result.put("orderDate", order.get("order_date"));
         result.put("totalAmount", order.get("total_amount"));
         result.put("status", status);

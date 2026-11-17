@@ -1,6 +1,8 @@
 
 <script lang="ts">
     import { onMount } from 'svelte';
+    import OrderReceipt from '../OrderSnapshot.svelte';
+    import type { OrderSnapshot } from '../../types/OrderSnapshot';
 
     const API_URL = 'http://localhost:8080/api/orders';
 
@@ -13,6 +15,7 @@
         totalAmount: number;
         status: string;
         fulfilled: boolean;
+        snapshot: OrderSnapshot | null;
     }
 
     interface OrderItem {
@@ -440,6 +443,8 @@
                 ? 'Mark as Pending'
                 : 'Mark as Fulfilled'}
         </button>
+
+        <OrderReceipt snapshot={selectedOrder.snapshot} />
 
     </section>
 {/if}

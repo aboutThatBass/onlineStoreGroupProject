@@ -1,5 +1,6 @@
 
 <script lang="ts">
+    import OrderReceipt from '../../lib/components/OrderSnapshot.svelte';
     import { Check, ShoppingBag, ArrowRight } from '@lucide/svelte';
     import { cart } from '../../lib/stores/cart.svelte';
     import { calculatePricing } from '../../lib/data/pricing';
@@ -131,6 +132,8 @@
                     </strong>
                 </div>
             </div>
+
+            <OrderReceipt snapshot={confirmation.snapshot} />
 
             <div class="confirmation-links">
                 <a

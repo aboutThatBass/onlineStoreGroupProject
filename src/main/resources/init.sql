@@ -57,3 +57,23 @@ CREATE TABLE IF NOT EXISTS cart_items (
     FOREIGN KEY (user_id) REFERENCES users(user_id),
     FOREIGN KEY (product_id) REFERENCES products(product_id)
 );
+
+-- Additive migration: works with both existing and newly created databases.
+-- Older orders intentionally have no snapshot; historical details cannot be reconstructed.
+CREATE TABLE IF NOT EXISTS order_snapshots (
+    order_id INTEGER PRIMARY KEY,
+    first_name TEXT NOT NULL,
+    last_name TEXT NOT NULL,
+    email TEXT NOT NULL,
+    address TEXT NOT NULL,
+    city TEXT NOT NULL,
+    state TEXT NOT NULL,
+    zip_code TEXT NOT NULL,
+    subtotal DECIMAL(10, 2) NOT NULL,
+    discount_code TEXT NOT NULL,
+    discount_amount DECIMAL(10, 2) NOT NULL,
+    tax_rate DECIMAL(8, 6) NOT NULL,
+    tax_amount DECIMAL(10, 2) NOT NULL,
+    total_amount DECIMAL(10, 2) NOT NULL,
+    FOREIGN KEY (order_id) REFERENCES orders(order_id)
+);
