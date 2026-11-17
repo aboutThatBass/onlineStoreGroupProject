@@ -2,7 +2,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
     import type { PageProps } from './$types';
-    import type { Product } from '../../../lib/types/Product';
+    import { effectivePrice, isOnSale, type Product } from '../../../lib/types/Product';
     import {
         ArrowLeft,
         ShoppingCart,
@@ -94,7 +94,21 @@
 
             <div class="purchase-section">
                 <p class="price">
-                    ${product.price.toFixed(2)}
+                    {#if isOnSale(product)}
+                        <del class="original-price">
+                            ${product.price.toFixed(2)}
+                        </del>
+
+                        <span class="sale-price">
+                            ${effectivePrice(product).toFixed(2)}
+                        </span>
+
+                        <span class="sale-badge">
+                            Save ${(product.price - effectivePrice(product)).toFixed(2)}
+                        </span>
+                    {:else}
+                        ${product.price.toFixed(2)}
+                    {/if}
                 </p>
 
                 {#if product.quantity > 0}
@@ -176,7 +190,17 @@
                             </p>
 
                             <p class="suggestion-price">
-                                ${suggestion.price.toFixed(2)}
+                                {#if isOnSale(suggestion)}
+                                    <del class="original-price">
+                                        ${suggestion.price.toFixed(2)}
+                                    </del>
+
+                                    <strong class="sale-price">
+                                        ${effectivePrice(suggestion).toFixed(2)}
+                                    </strong>
+                                {:else}
+                                    ${suggestion.price.toFixed(2)}
+                                {/if}
                             </p>
 
                             {#if suggestion.quantity > 0}
@@ -204,6 +228,25 @@
 </main>
 
 <style>
+    .original-price {
+        color: #777;
+        font-size: 0.65em;
+        margin-right: 0.5rem;
+    }
+
+    .sale-price {
+        color: #a52626;
+    }
+
+    .sale-badge {
+        display: inline-block;
+        background: #a52626;
+        color: white;
+        font-size: 0.85rem;
+        padding: 0.35rem 0.65rem;
+        border-radius: 7px;
+    }
+
     .product-page {
         max-width: 1100px;
         margin: 0 auto;

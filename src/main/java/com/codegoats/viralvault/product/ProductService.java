@@ -1,4 +1,3 @@
-
 package com.codegoats.viralvault.product;
 
 import org.springframework.stereotype.Service;
@@ -65,6 +64,21 @@ public class ProductService {
             );
         }
 
+        if (product.getSalePrice() != null) {
+            if (!Double.isFinite(product.getSalePrice()) ||
+                product.getSalePrice() < 0 ||
+                Math.round(product.getSalePrice() * 100.0) >=
+                Math.round(product.getPrice() * 100.0)) {
+
+                throw new IllegalArgumentException(
+                    "Sale price must be non-negative and less than the regular price."
+                );
+            }
+            product.setSalePrice(
+                Math.round(product.getSalePrice() * 100.0) / 100.0
+            );
+        }
+
         if (product.getQuantity() < 0) {
 
             throw new IllegalArgumentException(
@@ -108,6 +122,28 @@ public class ProductService {
         return productRepository.findById(id);
     }
 
+    @org.springframework.transaction.annotation.Transactional
+    public Product updateSale(Long id, Double salePrice) {
+
+        Product product = productRepository.findById(id);
+
+        if (product == null) {
+            return null;
+        }
+
+        product.setSalePrice(salePrice);
+
+        validateProduct(product);
+
+        boolean updated = productRepository.updateSalePrice(
+            id, product.getSalePrice()
+        );
+
+        return updated
+            ? productRepository.findById(id)
+            : null;
+    }
+
     public boolean removeProduct(Long id) {
 
         return productRepository.deleteProduct(id);
@@ -139,7 +175,7 @@ public class ProductService {
 
         return getAllProducts().stream()
             .sorted(
-                Comparator.comparingDouble(Product::getPrice)
+                Comparator.comparingDouble((Product p) -> p.getSalePrice() != null ? p.getSalePrice() : p.getPrice())
             )
             .toList();
     }
@@ -148,7 +184,7 @@ public class ProductService {
 
         return getAllProducts().stream()
             .sorted(
-                Comparator.comparingDouble(Product::getPrice)
+                Comparator.comparingDouble((Product p) -> p.getSalePrice() != null ? p.getSalePrice() : p.getPrice())
                     .reversed()
             )
             .toList();
@@ -164,4 +200,3 @@ public class ProductService {
             .toList();
     }
 }
-

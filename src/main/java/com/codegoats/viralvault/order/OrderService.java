@@ -2,6 +2,7 @@
 package com.codegoats.viralvault.order;
 
 import org.springframework.stereotype.Service;
+import com.codegoats.viralvault.discount.DiscountService;
 import org.springframework.transaction.annotation.Transactional;
 
 import java.math.BigDecimal;
@@ -19,9 +20,13 @@ public class OrderService {
             new BigDecimal("0.0825");
 
     private final OrderRepository orderRepository;
+    private final DiscountService discountService;
 
-    public OrderService(OrderRepository orderRepository) {
+    public OrderService(
+            OrderRepository orderRepository,
+            DiscountService discountService) {
         this.orderRepository = orderRepository;
+        this.discountService = discountService;
     }
 
     public List<Map<String, Object>> getOrdersForUser(Long userId) {
@@ -70,15 +75,7 @@ public class OrderService {
                 ? ""
                 : discountCode.trim().toUpperCase(Locale.ROOT);
 
-        if (!code.isEmpty()
-                && !code.equals("LABUB00")
-                && !code.equals("0HIO123")
-                && !code.equals("TUNGTUNG22")) {
 
-            throw new IllegalArgumentException(
-                "Invalid discount code."
-            );
-        }
 
         List<Map<String, Object>> cartItems =
                 orderRepository.findCartItems(userId);
@@ -130,30 +127,9 @@ public class OrderService {
 
         subtotal = roundMoney(subtotal);
 
-        BigDecimal discount = BigDecimal.ZERO;
-
-        switch (code) {
-            case "LABUB00":
-                discount = subtotal.multiply(
-                    new BigDecimal("0.10")
-                );
-                break;
-
-            case "0HIO123":
-                discount = subtotal.multiply(
-                    new BigDecimal("0.20")
-                );
-                break;
-
-            case "TUNGTUNG22":
-                discount = new BigDecimal("5.00");
-                break;
-
-            default:
-                break;
-        }
-
-        discount = roundMoney(discount.min(subtotal));
+        BigDecimal discount = roundMoney(
+            discountService.calculateDiscount(code, subtotal)
+        );
 
         BigDecimal taxableSubtotal =
                 roundMoney(subtotal.subtract(discount));

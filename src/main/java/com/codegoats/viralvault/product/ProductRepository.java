@@ -1,4 +1,3 @@
-
 package com.codegoats.viralvault.product;
 
 import org.springframework.jdbc.core.JdbcTemplate;
@@ -17,21 +16,27 @@ public class ProductRepository {
     }
 
     private final RowMapper<Product> productMapper =
-        (rs, rowNum) -> new Product(
-            rs.getLong("product_id"),
-            rs.getString("name"),
-            rs.getString("category"),
-            rs.getString("description"),
-            rs.getDouble("price"),
-            rs.getInt("quantity"),
-            rs.getString("image_url")
-        );
+        (rs, rowNum) -> {
+            double rawSale = rs.getDouble("sale_price");
+            Double salePrice = rs.wasNull() ? null : rawSale;
+
+            return new Product(
+                rs.getLong("product_id"),
+                rs.getString("name"),
+                rs.getString("category"),
+                rs.getString("description"),
+                rs.getDouble("price"),
+                salePrice,
+                rs.getInt("quantity"),
+                rs.getString("image_url")
+            );
+        };
 
     public List<Product> findAll() {
 
         String sql = """
             SELECT product_id, name, category, description,
-                   price, quantity, image_url
+                   price, sale_price, quantity, image_url
             FROM products
             ORDER BY product_id
             """;
@@ -43,7 +48,7 @@ public class ProductRepository {
 
         String sql = """
             SELECT product_id, name, category, description,
-                   price, quantity, image_url
+                   price, sale_price, quantity, image_url
             FROM products
             WHERE product_id = ?
             """;
@@ -59,8 +64,8 @@ public class ProductRepository {
         String sql = """
             INSERT INTO products
                 (name, category, description,
-                 price, quantity, image_url)
-            VALUES (?, ?, ?, ?, ?, ?)
+                 price, sale_price, quantity, image_url, is_on_sale)
+            VALUES (?, ?, ?, ?, ?, ?, ?, ?)
             """;
 
         jdbcTemplate.update(
@@ -69,8 +74,10 @@ public class ProductRepository {
             product.getCategory(),
             product.getDescription(),
             product.getPrice(),
+            product.getSalePrice(),
             product.getQuantity(),
-            product.getImageUrl()
+            product.getImageUrl(),
+            product.getSalePrice() != null ? 1 : 0
         );
     }
 
@@ -82,8 +89,10 @@ public class ProductRepository {
                 category = ?,
                 description = ?,
                 price = ?,
+                sale_price = ?,
                 quantity = ?,
-                image_url = ?
+                image_url = ?,
+                is_on_sale = ?
             WHERE product_id = ?
             """;
 
@@ -93,12 +102,31 @@ public class ProductRepository {
             product.getCategory(),
             product.getDescription(),
             product.getPrice(),
+            product.getSalePrice(),
             product.getQuantity(),
             product.getImageUrl(),
+            product.getSalePrice() != null ? 1 : 0,
             id
         );
 
         return rowsUpdated > 0;
+    }
+
+    public boolean updateSalePrice(Long id, Double salePrice) {
+
+        String sql = """
+            UPDATE products
+            SET sale_price = ?,
+                is_on_sale = ?
+            WHERE product_id = ?
+            """;
+
+        return jdbcTemplate.update(
+            sql,
+            salePrice,
+            salePrice != null ? 1 : 0,
+            id
+        ) > 0;
     }
 
     public boolean deleteProduct(Long id) {

@@ -1,7 +1,7 @@
 
 <script lang="ts">
     import { onMount } from 'svelte';
-    import type { Product } from '$lib/types/Product';
+    import type { Product } from '../../types/Product';
 
     type AdminProduct = Product & {
         category?: string;

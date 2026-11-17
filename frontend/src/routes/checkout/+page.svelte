@@ -1,9 +1,15 @@
 
 <script lang="ts">
+    import { effectivePrice } from '../../lib/types/Product';
     import OrderReceipt from '../../lib/components/OrderSnapshot.svelte';
     import { Check, ShoppingBag, ArrowRight } from '@lucide/svelte';
     import { cart } from '../../lib/stores/cart.svelte';
-    import { calculatePricing } from '../../lib/data/pricing';
+    import {
+        calculatePricing,
+        validateDiscountCode,
+        normalizeDiscountCode,
+        type DiscountRule
+    } from '../../lib/data/pricing';
     import {
         submitOrder,
         type CheckoutDetails,
@@ -25,34 +31,42 @@
     let confirmation = $state<OrderConfirmation | null>(null);
 
     let discountCode = $state('');
-    let appliedDiscountCode = $state('');
+    let appliedDiscount = $state<DiscountRule | null>(null);
     let discountError = $state('');
+    let validatingDiscount = $state(false);
 
     let pricing = $derived(
-        calculatePricing(cart.subtotal, appliedDiscountCode)
+        calculatePricing(cart.subtotal, appliedDiscount)
     );
 
-    function applyDiscount() {
-        const result = calculatePricing(
-            cart.subtotal,
-            discountCode
-        );
+    async function applyDiscount() {
+        if (validatingDiscount || submitting) return;
 
-        if (!result.validDiscount) {
-            discountError = 'Invalid discount code.';
-            return;
-        }
-
-        appliedDiscountCode =
-            discountCode.trim().toUpperCase();
-
+        validatingDiscount = true;
         discountError = '';
+        appliedDiscount = null;
+
+        const requestedCode = normalizeDiscountCode(discountCode);
+
+        try {
+            const rule = await validateDiscountCode(requestedCode);
+
+            if (normalizeDiscountCode(discountCode) === requestedCode) {
+                appliedDiscount = rule;
+            }
+        } catch (err) {
+            discountError = err instanceof Error
+                ? err.message
+                : 'Unable to validate discount.';
+        } finally {
+            validatingDiscount = false;
+        }
     }
 
     async function handleCheckout(event: SubmitEvent) {
         event.preventDefault();
 
-        if (submitting || cart.items.length === 0) {
+        if (submitting || validatingDiscount || cart.items.length === 0) {
             return;
         }
 
@@ -62,7 +76,7 @@
         try {
             confirmation = await submitOrder(
                 customer,
-                appliedDiscountCode
+                appliedDiscount?.code ?? ''
             );
         } catch (err) {
             error = err instanceof Error
@@ -262,7 +276,7 @@
 
                 <button
                     type="submit"
-                    disabled={submitting || cart.loading}
+                    disabled={submitting || validatingDiscount || cart.loading}
                 >
                     {submitting
                         ? 'Placing Order...'
@@ -287,7 +301,7 @@
                         </span>
 
                         <strong>
-                            ${(item.product.price * item.quantity).toFixed(2)}
+                            ${(effectivePrice(item.product) * item.quantity).toFixed(2)}
                         </strong>
                     </div>
                 {/each}
@@ -302,14 +316,14 @@
                     <input
                         id="discount-code"
                         type="text"
-                        bind:value={discountCode}
+                        bind:value={discountCode} oninput={() => { appliedDiscount = null; discountError = ""; }}
                         placeholder="Enter discount code"
                     />
 
                     <button
                         type="button"
                         class="apply-discount"
-                        onclick={applyDiscount}
+                        onclick={applyDiscount} disabled={validatingDiscount || submitting}
                     >
                         Apply
                     </button>
