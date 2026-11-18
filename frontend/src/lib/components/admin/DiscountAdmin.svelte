@@ -10,7 +10,7 @@
         active: boolean;
     };
 
-    const API = 'http://localhost:8080/api/discounts';
+    const API = '/api/discounts';
 
     let discounts = $state<Discount[]>([]);
     let code = $state('');

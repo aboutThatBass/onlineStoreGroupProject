@@ -7,7 +7,7 @@ export type CartItem = {
     quantity: number;
 };
 
-const API = 'http://localhost:8080/api';
+const API = '/api';
 const GUEST_CART_KEY = 'viralVaultGuestCart';
 
 type GuestCartEntry = {

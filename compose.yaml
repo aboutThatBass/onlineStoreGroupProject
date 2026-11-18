@@ -1,0 +1,25 @@
+services:
+  backend:
+    build:
+      context: .
+      dockerfile: Dockerfile
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:sqlite:/app/data/viralVault.db
+    volumes:
+      - ./data:/app/data
+    expose:
+      - "8080"
+    restart: unless-stopped
+
+  frontend:
+    build:
+      context: ./frontend
+      dockerfile: Dockerfile
+    ports:
+      - "3000:3000"
+    environment:
+      ORIGIN: http://localhost:3000
+      BACKEND_URL: http://backend:8080
+    depends_on:
+      - backend
+    restart: unless-stopped

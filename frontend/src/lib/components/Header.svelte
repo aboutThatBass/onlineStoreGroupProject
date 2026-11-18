@@ -31,7 +31,7 @@
         async function checkSession() {
             try {
                 const response = await fetch(
-                    'http://localhost:8080/api/users/session',
+                    '/api/users/session',
                     { credentials: 'include' }
                 );
 
@@ -177,7 +177,7 @@
     async function handleLogout() {
         try {
             const response = await fetch(
-                'http://localhost:8080/api/users/logout',
+                '/api/users/logout',
                 {
                     method: 'POST',
                     credentials: 'include'

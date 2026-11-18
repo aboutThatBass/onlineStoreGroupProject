@@ -4,7 +4,7 @@
     import OrderReceipt from '../OrderSnapshot.svelte';
     import type { OrderSnapshot } from '../../types/OrderSnapshot';
 
-    const API_URL = 'http://localhost:8080/api/orders';
+    const API_URL = '/api/orders';
 
     interface Order {
         orderId: number;

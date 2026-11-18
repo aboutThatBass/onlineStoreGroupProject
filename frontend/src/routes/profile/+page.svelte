@@ -38,8 +38,8 @@
     type SortOption = 'newest' | 'oldest' | 'highest' | 'lowest';
     type AccountTab = 'profile' | 'orders';
 
-    const PROFILE_API = 'http://localhost:8080/api/users/profile';
-    const ORDERS_API = 'http://localhost:8080/api/orders/my';
+    const PROFILE_API = '/api/users/profile';
+    const ORDERS_API = '/api/orders/my';
 
     function emptyProfile(): Profile {
         return {

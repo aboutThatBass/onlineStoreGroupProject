@@ -1,7 +1,7 @@
 <script lang="ts">
     import { onMount } from 'svelte';
 
-    const API = 'http://localhost:8080/api/products';
+    const API = '/api/products';
 
     type Product = {
         id: number;

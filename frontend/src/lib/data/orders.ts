@@ -30,7 +30,7 @@ type SavedOrderResponse = {
     snapshot: OrderSnapshot;
 };
 
-const API = 'http://localhost:8080/api';
+const API = '/api';
 
 export async function submitOrder(
     customer: CheckoutDetails,

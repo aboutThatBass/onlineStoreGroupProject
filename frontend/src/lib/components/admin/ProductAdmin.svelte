@@ -16,7 +16,7 @@
         imageUrl: string;
     };
 
-    const API_URL = 'http://localhost:8080/api/products';
+    const API_URL = '/api/products';
 
     let products: AdminProduct[] = $state([]);
     let loading = $state(true);

@@ -7,7 +7,7 @@ export const load: PageLoad = async ({ fetch, params }) => {
         error(404, 'Product not found');
     }
 
-    const response = await fetch(`http://localhost:8080/api/products/${params.id}`)
+    const response = await fetch(`/api/products/${params.id}`)
         .catch(() => error(502, 'Unable to load the product. Please try again.'));
 
     if (response.status === 404 || response.status === 400) {

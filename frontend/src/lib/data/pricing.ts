@@ -1,6 +1,6 @@
 export const TAX_RATE = 0.0825;
 
-const API = 'http://localhost:8080/api/discounts';
+const API = '/api/discounts';
 
 export type DiscountRule = {
     valid: boolean;
