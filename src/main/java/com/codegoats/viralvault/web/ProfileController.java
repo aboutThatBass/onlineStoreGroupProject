@@ -17,10 +17,7 @@ import java.util.Optional;
 
 @RestController
 @RequestMapping("/api/users/profile")
-@CrossOrigin(
-    origins = "http://localhost:5173",
-    allowCredentials = "true"
-)
+
 public class ProfileController {
 
     private final UserRepository userRepository;

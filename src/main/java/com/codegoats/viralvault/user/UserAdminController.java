@@ -13,10 +13,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/users")
-@CrossOrigin(
-    origins = "http://localhost:5173",
-    allowCredentials = "true"
-)
+
 public class UserAdminController {
 
     private final UserRepository userRepository;

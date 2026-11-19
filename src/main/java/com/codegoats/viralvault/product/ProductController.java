@@ -15,10 +15,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/products")
-@CrossOrigin(
-    origins = "http://localhost:5173",
-    allowCredentials = "true"
-)
+
 public class ProductController {
 
     private final ProductService productService;

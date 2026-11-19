@@ -14,10 +14,7 @@ import java.util.Map;
 
 @RestController
 @RequestMapping("/api/discounts")
-@CrossOrigin(
-    origins = "http://localhost:5173",
-    allowCredentials = "true"
-)
+
 public class DiscountController {
 
     private final DiscountService discountService;
